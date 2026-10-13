@@ -17,7 +17,7 @@ const MOST = 0.6;
 // Seconds at the start with no blocks, so a ride never opens with a crash, and with nothing
 // at all, so it opens on the music.
 const GRACE = 3;
-const QUIET = 1.5;
+const QUIET = 2;
 // Seconds in which blocks must never cover all three lanes, so there's always a way through.
 const REACH = 0.35;
 
