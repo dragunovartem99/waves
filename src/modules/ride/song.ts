@@ -12,7 +12,6 @@ export type Song = {
 	kicks: Float32Array;
 	track: Float32Array;
 	grid: Ridge[];
-	bpm: number;
 	pickups: Hit[];
 	blocks: Hit[];
 	title: string;
@@ -28,7 +27,7 @@ const title = (name: string) =>
 
 // Everything a ride needs, built once per song from its analysis.
 export function prepare({ analysis, buffer, name }: Source): Song {
-	const { ridges, kicks, beats, bpm } = analysis;
+	const { ridges, kicks, beats } = analysis;
 	const path = track(analysis);
 	const marks = hits(analysis);
 	return {
@@ -37,7 +36,6 @@ export function prepare({ analysis, buffer, name }: Source): Song {
 		kicks,
 		track: path,
 		grid: grid({ beats, track: path }),
-		bpm,
 		...marks,
 		title: title(name),
 	};

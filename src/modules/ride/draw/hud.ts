@@ -8,7 +8,6 @@ export type Hud = {
 	pen: Pen;
 	score: Score;
 	title: string;
-	bpm: number;
 	now: number;
 	duration: number;
 	hint: string;
@@ -72,11 +71,6 @@ function lives({ pen, lives: left }: Hud) {
 	});
 }
 
-function tempo({ pen, bpm }: Hud) {
-	mono({ pen, text: "BPM", x: 1 - MARGIN - 0.07, y: 0.082, color: DIM });
-	mono({ pen, text: String(Math.round(bpm)), x: 1 - MARGIN, y: 0.082 });
-}
-
 function banner({ pen, banner: shown }: Hud) {
 	if (!shown) return;
 	const { context, width, height } = pen;
@@ -93,7 +87,6 @@ export function hud(view: Hud) {
 	pen.context.globalAlpha = 1;
 	score(view);
 	lives(view);
-	tempo(view);
 	footer(view);
 	banner(view);
 }

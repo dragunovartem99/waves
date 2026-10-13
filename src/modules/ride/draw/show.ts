@@ -17,7 +17,7 @@ const AGAIN = "click to ride again · drop another song";
 // One frame of a ride: the field, then the HUD over it.
 export function show({ pen, song, run, now }: Frame) {
 	const { score, health, u, crashed, ended } = run;
-	const { ridges, track, grid, kicks, title, bpm } = song;
+	const { ridges, track, grid, kicks, title } = song;
 	const at = (now * RATE) / HOP;
 	const [pickups, blocks] = [song.pickups.slice(score.next), song.blocks.slice(health.next)];
 	const kick = kicks[Math.round(at)] ?? 0;
@@ -27,5 +27,5 @@ export function show({ pen, song, run, now }: Frame) {
 	// The loop stops when the ride ends, so a flash there would freeze on screen.
 	const flash = ended ? 0 : Math.max(0, 1 - (now - crashed) / FLASH);
 	const { duration } = song.buffer;
-	hud({ pen, score, title, bpm, now, duration, hint: "← →", lives: health.lives, flash, banner });
+	hud({ pen, score, title, now, duration, hint: "← →", lives: health.lives, flash, banner });
 }
