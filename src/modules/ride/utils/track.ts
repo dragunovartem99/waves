@@ -7,8 +7,9 @@ export const PACE = 1.4;
 // Faster songs ride faster overall, within limits so slow ones don't drag or fast ones blur.
 const TEMPO = 120;
 const TEMPO_RANGE = [0.8, 1.35] as const;
-// Speed range before scaling to PACE: sparse parts crawl, full ones (choruses, drops) rush.
-const SLOW = 0.4;
+// Speed range before scaling to PACE: sparse parts cruise, full ones (choruses, drops) rush.
+// The floor stays high: intensity is ranked, so every intro lands at the bottom however busy.
+const SLOW = 1.2;
 const FAST = 3;
 // Above 1 keeps middling sections calm, so the jump into a chorus stands out.
 const CURVE = 1.5;

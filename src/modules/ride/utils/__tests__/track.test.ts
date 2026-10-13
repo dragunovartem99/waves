@@ -27,8 +27,8 @@ describe("track", () => {
 		expect(step(100)).toBeGreaterThan(1.8 * step(50));
 	});
 
-	it("rushes through full parts and crawls through sparse ones", () => {
-		expect(at(350) - at(300)).toBeGreaterThan(3 * (at(150) - at(100)));
+	it("rushes through full parts and cruises through sparse ones", () => {
+		expect(at(350) - at(300)).toBeGreaterThan(1.8 * (at(150) - at(100)));
 	});
 });
 
