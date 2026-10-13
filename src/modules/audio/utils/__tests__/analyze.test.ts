@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { analyze } from "../analyze";
 import { HOP } from "../frames";
+import { POINTS } from "../ridge";
 
 const RATE = 44_100;
 const BURSTS = [1, 1.5, 2, 3];
@@ -13,7 +14,7 @@ const song = Float32Array.from({ length: RATE * 4 }, (_, i) => {
 });
 
 describe("analyze", () => {
-	const { envelope, onsets } = analyze(song);
+	const { envelope, onsets, lanes, ridges } = analyze(song);
 
 	it("gives one envelope value per hop", () => {
 		expect(envelope).toHaveLength(Math.floor(song.length / HOP));
@@ -23,5 +24,13 @@ describe("analyze", () => {
 		expect(onsets.map((frame) => ((frame * HOP) / RATE).toFixed(1))).toEqual(
 			BURSTS.map((at) => at.toFixed(1))
 		);
+	});
+
+	it("gives a lane per onset", () => {
+		expect(lanes).toHaveLength(onsets.length);
+	});
+
+	it("gives a ridge per hop", () => {
+		expect(ridges).toHaveLength(envelope.length * POINTS);
 	});
 });
