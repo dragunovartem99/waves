@@ -21,8 +21,97 @@ input[type="file"] {
 	touch-action: none;
 }
 
+#menu {
+	position: fixed;
+	inset: 0;
+	display: grid;
+	place-content: center;
+	justify-items: center;
+	gap: 18px;
+	padding: 16px;
+	background: rgb(0 0 0 / 0.72);
+	font:
+		400 15px/1.4 "JetBrains Mono",
+		monospace;
+	color: #f1efe9;
+	text-align: center;
+}
+
+#menu[hidden],
+#pause[hidden] {
+	display: none;
+}
+
+#menu p {
+	margin: 0;
+}
+
+#menu-title {
+	font:
+		900 clamp(40px, 9vw, 96px) / 1 Archivo,
+		sans-serif;
+	letter-spacing: -0.02em;
+}
+
+#menu-note,
+#menu .keys {
+	color: #8a8883;
+}
+
+#menu-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 12px;
+	margin-top: 12px;
+}
+
+#menu button,
+#pause {
+	font:
+		700 15px "JetBrains Mono",
+		monospace;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #f1efe9;
+	background: transparent;
+	border: 1px solid #f1efe9;
+	padding: 12px 20px;
+	cursor: pointer;
+}
+
+#menu button:first-child {
+	border-color: #ff3b1f;
+	color: #ff3b1f;
+}
+
+#menu button:hover,
+#menu button:focus-visible,
+#pause:hover {
+	background: #f1efe9;
+	color: #000;
+	outline: none;
+}
+
+#menu button:first-child:is(:hover, :focus-visible) {
+	background: #ff3b1f;
+	color: #000;
+}
+
+#pause {
+	position: fixed;
+	top: 16px;
+	left: 50%;
+	translate: -50% 0;
+	padding: 8px 14px;
+	border-color: #333;
+	color: #8a8883;
+}
+
 main,
-.debug #ride {
+.debug #ride,
+.debug #menu,
+.debug #pause {
 	display: none;
 }
 
