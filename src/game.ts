@@ -1,18 +1,26 @@
 import type { Lane, Playback } from "@/modules/audio";
 import { analyzeOffThread, decode, HOP, play, RATE, samples } from "@/modules/audio";
-import type { Hit, Score } from "@/modules/ride";
-import { fit, hud, idle, judge, LANES, loadFonts, scene, START } from "@/modules/ride";
+import type { Hit, Run } from "@/modules/ride";
+import { advance, fit, FRESH, hits, hud, idle, loadFonts, scene, track } from "@/modules/ride";
 
 import { $, onFile } from "./dom";
 
-type Song = { buffer: AudioBuffer; ridges: Float32Array; hits: Hit[]; title: string };
-type Ride = { song: Song; playback: Playback; score: Score; lane: Lane; u: number };
+type Song = {
+	buffer: AudioBuffer;
+	ridges: Float32Array;
+	track: Float32Array;
+	pickups: Hit[];
+	blocks: Hit[];
+	title: string;
+};
+type Ride = { song: Song; playback: Playback; run: Run };
 
-// Share of the gap to the target lane the dot covers per frame.
-const EASE = 0.35;
+// Seconds the red flash takes to fade after a crash.
+const FLASH = 0.4;
 const LEFT: Record<Lane, Lane> = { 0: 0, 1: 0, 2: 1 };
 const RIGHT: Record<Lane, Lane> = { 0: 1, 1: 2, 2: 2 };
 const PICK = "or click to pick one";
+const AGAIN = "click to ride again · drop another song";
 
 const context = new AudioContext({ sampleRate: RATE });
 const canvas = $<HTMLCanvasElement>("#ride");
@@ -20,21 +28,49 @@ const input = $<HTMLInputElement>("#file");
 let ride: Ride | undefined;
 
 const say = (text: string, note = PICK) => idle({ pen: fit(canvas), text, note });
+const title = (file: File) =>
+	file.name
+		.replace(/\.[^.]+$/u, "")
+		.replaceAll(" - ", " — ")
+		.toUpperCase();
+
+function draw({ song, run, now }: { song: Song; run: Run; now: number }) {
+	const { score, health, u, crashed, ended } = run;
+	const { duration } = song.buffer;
+	const pen = fit(canvas);
+	const [pickups, blocks] = [song.pickups.slice(score.next), song.blocks.slice(health.next)];
+	const at = (now * RATE) / HOP;
+	scene({ pen, ridges: song.ridges, track: song.track, pickups, blocks, at, u });
+	const text = health.lives === 0 ? "GAME OVER" : "CLEAR";
+	const banner = ended ? { text, note: AGAIN } : undefined;
+	// The loop stops when the ride ends, so a flash there would freeze on screen.
+	const flash = ended ? 0 : Math.max(0, 1 - (now - crashed) / FLASH);
+	const { lives } = health;
+	hud({ pen, score, title: song.title, now, duration, hint: "← →", lives, flash, banner });
+}
 
 function frame() {
 	if (!ride) return;
-	const { song, playback, lane } = ride;
-	const now = Math.min(playback.position(), song.buffer.duration);
-	const score = judge({ hits: song.hits, state: ride.score, now, lane });
-	const u = ride.u + (LANES[lane] - ride.u) * EASE;
-	ride = { ...ride, score, u };
-	const pen = fit(canvas);
-	const ended = now >= song.buffer.duration;
-	const hits = song.hits.slice(score.next);
-	scene({ pen, ridges: song.ridges, hits, at: (now * RATE) / HOP, u });
-	const hint = ended ? "DROP ANOTHER SONG" : "← →";
-	hud({ pen, score, title: song.title, now, duration: song.buffer.duration, hint });
-	if (!ended) requestAnimationFrame(frame);
+	const { song, playback } = ride;
+	const { duration } = song.buffer;
+	const now = Math.min(playback.position(), duration);
+	const run = advance({
+		run: ride.run,
+		pickups: song.pickups,
+		blocks: song.blocks,
+		now,
+		duration,
+	});
+	ride = { ...ride, run };
+	draw({ song, run, now });
+	if (run.ended) playback.stop();
+	else requestAnimationFrame(frame);
+}
+
+function start(song: Song) {
+	ride?.playback.stop();
+	ride = { song, playback: play({ context, buffer: song.buffer }), run: FRESH };
+	requestAnimationFrame(frame);
 }
 
 async function load(file: File) {
@@ -43,20 +79,15 @@ async function load(file: File) {
 	say("DECODING…", file.name);
 	const buffer = await decode({ context, file });
 	say("ANALYZING…", file.name);
-	const { ridges, onsets, lanes } = await analyzeOffThread(samples(buffer));
-	const hits = onsets.map((onset, i) => ({ time: (onset * HOP) / RATE, lane: lanes[i] ?? 1 }));
-	const title = file.name
-		.replace(/\.[^.]+$/u, "")
-		.replaceAll(" - ", " — ")
-		.toUpperCase();
+	const analysis = await analyzeOffThread(samples(buffer));
 	await context.resume();
-	const song = { buffer, ridges, hits, title };
-	ride = { song, playback: play({ context, buffer }), score: START, lane: 1, u: LANES[1] };
-	requestAnimationFrame(frame);
+	const { ridges, envelope } = analysis;
+	start({ buffer, ridges, track: track(envelope), ...hits(analysis), title: title(file) });
 }
 
 function steer(move: Record<Lane, Lane>) {
-	if (ride) ride = { ...ride, lane: move[ride.lane] };
+	if (ride && !ride.run.ended)
+		ride = { ...ride, run: { ...ride.run, lane: move[ride.run.lane] } };
 }
 
 const open = (file: File) =>
@@ -66,9 +97,10 @@ addEventListener("keydown", (event) => {
 	if (event.key === "ArrowLeft") steer(LEFT);
 	if (event.key === "ArrowRight") steer(RIGHT);
 });
-// Tapping a half of the screen steers; before or after a song it opens the picker.
+// Tapping a half of the screen steers; after a ride it starts the song again.
 canvas.addEventListener("pointerdown", (event) => {
-	if (!ride || ride.playback.position() >= ride.song.buffer.duration) return input.click();
+	if (!ride) return input.click();
+	if (ride.run.ended) return start(ride.song);
 	steer(event.clientX < canvas.clientWidth / 2 ? LEFT : RIGHT);
 });
 addEventListener("resize", () => ride ?? say("DROP A SONG"));

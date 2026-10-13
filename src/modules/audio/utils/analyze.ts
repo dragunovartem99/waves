@@ -11,6 +11,8 @@ import { spectrum } from "./spectrum";
 export type Analysis = {
 	envelope: Float32Array;
 	onsets: number[];
+	// Spectral flux at each onset: how hard it hit.
+	strengths: number[];
 	lanes: Lane[];
 	ridges: Float32Array;
 };
@@ -21,10 +23,12 @@ export function analyze(samples: Float32Array): Analysis {
 	const hops = frames(samples);
 	const fft = spectrum(HOP);
 	const spectra = hops.map((frame) => fft(frame));
-	const onsets = peaks(flux(spectra));
+	const rises = flux(spectra);
+	const onsets = peaks(rises);
 	return {
 		envelope: smooth({ values: envelope(hops), factor: SMOOTHING }),
 		onsets,
+		strengths: onsets.map((onset) => rises[onset] ?? 0),
 		lanes: lanes({ spectra, onsets }),
 		ridges: ridges(spectra),
 	};

@@ -3,7 +3,7 @@ import { POINTS } from "@/modules/audio";
 import type { Hit } from "../utils/judge";
 import { LANES, project } from "../utils/project";
 import type { Dot, Pen } from "./canvas";
-import { ACCENT, BACKDROP, GUIDE, trace } from "./canvas";
+import { ACCENT, BACKDROP, GUIDE, INK, trace } from "./canvas";
 
 export type Line = { pen: Pen; depth: number; values: Float32Array };
 type At = { pen: Pen; depth: number; u: number; value: number };
@@ -42,14 +42,17 @@ export function ridge(line: Line) {
 	context.stroke();
 }
 
-export function hit({ line, lane }: { line: Line; lane: Hit["lane"] }) {
+// Blocks are heavier than pickups, so danger reads at a glance even far away.
+export function hit({ line, lane, block }: { line: Line; lane: Hit["lane"]; block: boolean }) {
 	const { pen, depth } = line;
 	const u = LANES[lane];
 	const from = Math.round((u - SEGMENT) * (POINTS - 1));
 	const to = Math.round((u + SEGMENT) * (POINTS - 1));
 	trace({ context: pen.context, dots: dots(line).slice(from, to + 1) });
-	pen.context.strokeStyle = ACCENT;
-	pen.context.lineWidth = Math.max(2, 6 * dot({ pen, depth, u, value: 0 }).scale) * unit(pen);
+	const weight = block ? 9 : 5;
+	pen.context.strokeStyle = block ? ACCENT : INK;
+	pen.context.lineWidth =
+		Math.max(2, weight * dot({ pen, depth, u, value: 0 }).scale) * unit(pen);
 	pen.context.stroke();
 }
 

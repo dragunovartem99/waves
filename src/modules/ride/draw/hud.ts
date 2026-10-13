@@ -1,6 +1,8 @@
+import { LIVES } from "../utils/crash";
 import type { Score } from "../utils/judge";
 import type { Pen } from "./canvas";
-import { ACCENT, BACKDROP, DIM, INK } from "./canvas";
+import { ACCENT, DIM, INK } from "./canvas";
+import { clock, MARGIN, message, mono } from "./text";
 
 export type Hud = {
 	pen: Pen;
@@ -9,26 +11,16 @@ export type Hud = {
 	now: number;
 	duration: number;
 	hint: string;
+	lives: number;
+	// 1 right after a crash, fading to 0.
+	flash: number;
+	banner?: { text: string; note: string };
 };
-type Text = { pen: Pen; text: string; x: number; y: number; color?: string; bold?: boolean };
-
 // Fractions of the canvas, taken from the 1600×1000 mockup.
-const MARGIN = 0.039;
-const LABEL = 0.015;
 const SCORE = 0.12;
 const DIGITS = 5;
-
-// Positions are fractions of the canvas; alignment follows the side of the screen.
-function mono({ pen, text, x, y, color = INK, bold = false }: Text) {
-	const { context, width, height } = pen;
-	context.font = `${bold ? 700 : 400} ${Math.max(11, LABEL * height)}px 'JetBrains Mono'`;
-	context.fillStyle = color;
-	context.textAlign = x < 0.4 ? "left" : x > 0.6 ? "right" : "center";
-	context.fillText(text, x * width, y * height);
-}
-
-const clock = (seconds: number) =>
-	`${String(Math.floor(seconds / 60)).padStart(2, "0")}:${(seconds % 60).toFixed(1).padStart(4, "0")}`;
+const FLASH = 0.35;
+const DOT = 0.008;
 
 function score({ pen, score: { score: points, streak } }: Hud) {
 	const { context, width, height } = pen;
@@ -62,17 +54,39 @@ function footer({ pen, title, now, duration, hint }: Hud) {
 	);
 }
 
-export function hud(view: Hud) {
-	view.pen.context.globalAlpha = 1;
-	score(view);
-	footer(view);
+function lives({ pen, lives: left }: Hud) {
+	const { context, width, height } = pen;
+	mono({ pen, text: "LIVES", x: 1 - MARGIN - 0.07, y: 0.056, color: DIM });
+	Array.from({ length: LIVES }, (_, i) => {
+		context.beginPath();
+		context.arc(
+			(1 - MARGIN - i * 0.022) * width - DOT * height,
+			0.05 * height,
+			DOT * height,
+			0,
+			2 * Math.PI
+		);
+		context.fillStyle = LIVES - i <= left ? INK : "#333";
+		return context.fill();
+	});
 }
 
-// Black screen with one centred message, for before a song and while it loads.
-export function idle({ pen, text, note }: { pen: Pen; text: string; note: string }) {
-	pen.context.globalAlpha = 1;
-	pen.context.fillStyle = BACKDROP;
+function banner({ pen, banner: shown }: Hud) {
+	if (!shown) return;
+	const { context, width, height } = pen;
+	context.fillStyle = "rgb(0 0 0 / 0.6)";
+	context.fillRect(0, 0.42 * height, width, 0.16 * height);
+	message({ pen, ...shown });
+}
+
+export function hud(view: Hud) {
+	const { pen, flash } = view;
+	pen.context.globalAlpha = FLASH * flash;
+	pen.context.fillStyle = ACCENT;
 	pen.context.fillRect(0, 0, pen.width, pen.height);
-	mono({ pen, text, x: 0.5, y: 0.5, bold: true });
-	mono({ pen, text: note, x: 0.5, y: 0.54, color: DIM });
+	pen.context.globalAlpha = 1;
+	score(view);
+	lives(view);
+	footer(view);
+	banner(view);
 }

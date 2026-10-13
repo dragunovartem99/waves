@@ -1,16 +1,26 @@
 import { HOP, POINTS, RATE } from "@/modules/audio";
 
 import type { Hit } from "../utils/judge";
+import { distance, frameAt } from "../utils/track";
 import type { Pen } from "./canvas";
 import { BACKDROP } from "./canvas";
 import { clamp, guides, hit, player, ridge } from "./lines";
 
-// `at` is the playhead in fractional frames; `hits` are the ones not judged yet.
-export type Scene = { pen: Pen; ridges: Float32Array; hits: Hit[]; at: number; u: number };
-type Item = { depth: number; frame: number; lane?: Hit["lane"] };
+// `at` is the playhead in fractional frames; `pickups` and `blocks` are the ones not judged yet.
+export type Scene = {
+	pen: Pen;
+	ridges: Float32Array;
+	track: Float32Array;
+	pickups: Hit[];
+	blocks: Hit[];
+	at: number;
+	u: number;
+};
+type Item = { depth: number; frame: number; lane?: Hit["lane"]; block?: boolean };
 
 const RIDGES = 14;
-// Frames between ridges (~0.2 s): sparse enough not to turn into Joy Division.
+// Track distance between ridges (~0.2 s at average speed): sparse enough not to turn into
+// Joy Division.
 const SPACING = 9;
 const SPAN = RIDGES * SPACING;
 
@@ -22,32 +32,40 @@ function slice({ ridges, frame }: { ridges: Float32Array; frame: number }) {
 	return f < 0 ? new Float32Array(0) : ridges.subarray(f * POINTS, (f + 1) * POINTS);
 }
 
-function items({ hits, at }: Scene): Item[] {
-	const depth = (frame: number) => (frame - at) / SPAN;
-	const first = Math.ceil(at / SPACING) - 1;
-	const lines = Array.from({ length: RIDGES + 2 }, (_, i) => (first + i) * SPACING);
-	const marks = hits.map(({ time, lane }) => ({ frame: (time * RATE) / HOP, lane }));
-	return [
-		...lines.map((frame) => ({ frame, depth: depth(frame) })),
-		...marks.map(({ frame, lane }) => ({ frame, lane, depth: depth(frame) })),
-	]
-		.filter(({ depth: d }) => d > 0 && d <= 1)
+// Ridges sit at fixed track distances, so they always keep their spacing and only their speed
+// changes with the song's loudness.
+function items({ track, pickups, blocks, at }: Scene): Item[] {
+	const now = distance({ track, frame: at });
+	const first = Math.floor(now / SPACING) + 1;
+	const lines = Array.from({ length: RIDGES }, (_, i) => {
+		const far = (first + i) * SPACING;
+		return { frame: frameAt({ track, distance: far }), depth: (far - now) / SPAN };
+	});
+	const mark = ({ hit: { time, lane }, block }: { hit: Hit; block: boolean }) => {
+		const frame = (time * RATE) / HOP;
+		return { frame, lane, block, depth: (distance({ track, frame }) - now) / SPAN };
+	};
+	const marks = [
+		...pickups.map((entry) => mark({ hit: entry, block: false })),
+		...blocks.map((entry) => mark({ hit: entry, block: true })),
+	];
+	return [...lines, ...marks]
+		.filter(({ depth }) => depth > 0 && depth <= 1)
 		.toSorted((a, b) => b.depth - a.depth);
 }
 
 function paint({ view, item }: { view: Scene; item: Item }) {
 	const { pen, ridges } = view;
-	const { depth, frame, lane } = item;
+	const { depth, frame, lane, block = false } = item;
 	const line = { pen, depth, values: slice({ ridges, frame }) };
 	if (line.values.length < POINTS) return;
 	pen.context.globalAlpha = fade(depth);
 	if (lane === undefined) ridge(line);
-	else hit({ line, lane });
+	else hit({ line, lane, block });
 }
 
-// Ridges sit at fixed song frames and glide toward the viewer as `at` advances, so motion is
-// continuous; hits ride on their own frame's line. Painted far → near for occlusion, ending
-// with the live front ridge (the spectrum right now) that the player rides on.
+// Painted far → near for occlusion, ending with the live front ridge (the spectrum right now)
+// that the player rides on.
 export function scene(view: Scene) {
 	const { pen, ridges, at, u } = view;
 	pen.context.globalAlpha = 1;
