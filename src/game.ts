@@ -8,6 +8,7 @@ import { $, onFile } from "./dom";
 type Song = {
 	buffer: AudioBuffer;
 	ridges: Float32Array;
+	kicks: Float32Array;
 	track: Float32Array;
 	pickups: Hit[];
 	blocks: Hit[];
@@ -15,6 +16,8 @@ type Song = {
 };
 type Ride = { song: Song; playback: Playback; run: Run };
 
+// Radians per second the kick ripple travels across the ridges.
+const RIPPLE = 9;
 // Seconds the red flash takes to fade after a crash.
 const FLASH = 0.4;
 const LEFT: Record<Lane, Lane> = { 0: 0, 1: 0, 2: 1 };
@@ -40,7 +43,9 @@ function draw({ song, run, now }: { song: Song; run: Run; now: number }) {
 	const pen = fit(canvas);
 	const [pickups, blocks] = [song.pickups.slice(score.next), song.blocks.slice(health.next)];
 	const at = (now * RATE) / HOP;
-	scene({ pen, ridges: song.ridges, track: song.track, pickups, blocks, at, u });
+	const kick = song.kicks[Math.round(at)] ?? 0;
+	const field = { ridges: song.ridges, track: song.track, kick, phase: now * RIPPLE };
+	scene({ pen, ...field, pickups, blocks, at, u });
 	const text = health.lives === 0 ? "GAME OVER" : "CLEAR";
 	const banner = ended ? { text, note: AGAIN } : undefined;
 	// The loop stops when the ride ends, so a flash there would freeze on screen.
@@ -81,8 +86,8 @@ async function load(file: File) {
 	say("ANALYZING…", file.name);
 	const analysis = await analyzeOffThread(samples(buffer));
 	await context.resume();
-	const { ridges, envelope } = analysis;
-	start({ buffer, ridges, track: track(envelope), ...hits(analysis), title: title(file) });
+	const { ridges, kicks } = analysis;
+	start({ buffer, ridges, kicks, track: track(analysis), ...hits(analysis), title: title(file) });
 }
 
 function steer(move: Record<Lane, Lane>) {

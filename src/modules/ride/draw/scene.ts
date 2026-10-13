@@ -15,6 +15,8 @@ export type Scene = {
 	blocks: Hit[];
 	at: number;
 	u: number;
+	kick: number;
+	phase: number;
 };
 type Item = { depth: number; frame: number; lane?: Hit["lane"]; block?: boolean };
 
@@ -55,9 +57,9 @@ function items({ track, pickups, blocks, at }: Scene): Item[] {
 }
 
 function paint({ view, item }: { view: Scene; item: Item }) {
-	const { pen, ridges } = view;
+	const { pen, ridges, kick, phase } = view;
 	const { depth, frame, lane, block = false } = item;
-	const line = { pen, depth, values: slice({ ridges, frame }) };
+	const line = { pen, depth, values: slice({ ridges, frame }), kick, phase };
 	if (line.values.length < POINTS) return;
 	pen.context.globalAlpha = fade(depth);
 	if (lane === undefined) ridge(line);
@@ -67,14 +69,14 @@ function paint({ view, item }: { view: Scene; item: Item }) {
 // Painted far → near for occlusion, ending with the live front ridge (the spectrum right now)
 // that the player rides on.
 export function scene(view: Scene) {
-	const { pen, ridges, at, u } = view;
+	const { pen, ridges, at, u, kick, phase } = view;
 	pen.context.globalAlpha = 1;
 	pen.context.fillStyle = BACKDROP;
 	pen.context.fillRect(0, 0, pen.width, pen.height);
 	guides(pen);
 	items(view).forEach((item) => paint({ view, item }));
 	pen.context.globalAlpha = 1;
-	const front = { pen, depth: 0, values: slice({ ridges, frame: at }) };
+	const front = { pen, depth: 0, values: slice({ ridges, frame: at }), kick, phase };
 	if (front.values.length < POINTS) return;
 	ridge(front);
 	player({ line: front, u });

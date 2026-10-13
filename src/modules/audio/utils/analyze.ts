@@ -1,6 +1,7 @@
 import { envelope } from "./envelope";
 import { flux } from "./flux";
 import { frames, HOP } from "./frames";
+import { kicks } from "./kicks";
 import type { Lane } from "./lanes";
 import { lanes } from "./lanes";
 import { peaks } from "./peaks";
@@ -15,6 +16,8 @@ export type Analysis = {
 	strengths: number[];
 	lanes: Lane[];
 	ridges: Float32Array;
+	// Kick punch per frame, 0–1.
+	kicks: Float32Array;
 };
 
 const SMOOTHING = 0.05;
@@ -31,5 +34,6 @@ export function analyze(samples: Float32Array): Analysis {
 		strengths: onsets.map((onset) => rises[onset] ?? 0),
 		lanes: lanes({ spectra, onsets }),
 		ridges: ridges(spectra),
+		kicks: kicks(spectra),
 	};
 }

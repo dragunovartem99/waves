@@ -1,21 +1,30 @@
 import { describe, expect, it } from "vitest";
 
-import { distance, frameAt, track } from "../track";
+import { distance, frameAt, PACE, track } from "../track";
 
 const LENGTH = 400;
 const steady = new Float32Array(LENGTH).fill(0.5);
 // Quiet first half, loud second half.
 const swell = Float32Array.from({ length: LENGTH }, (_, i) => (i < LENGTH / 2 ? 0.05 : 1));
-const line = track(swell);
+const still = new Float32Array(LENGTH);
+const line = track({ envelope: swell, kicks: still });
 const at = (frame: number) => distance({ track: line, frame });
 
 describe("track", () => {
-	it("moves 1 per frame on average", () => {
-		expect(line.at(-1)).toBeCloseTo(LENGTH, 2);
+	it("moves PACE per frame on average", () => {
+		expect(line.at(-1)).toBeCloseTo(PACE * LENGTH, 1);
 	});
 
 	it("moves evenly through a steady song", () => {
-		expect(distance({ track: track(steady), frame: 100 })).toBeCloseTo(100, 3);
+		const even = track({ envelope: steady, kicks: still });
+		expect(distance({ track: even, frame: 100 })).toBeCloseTo(PACE * 100, 2);
+	});
+
+	it("jolts forward on a kick", () => {
+		const kicked = track({ envelope: steady, kicks: still.with(100, 1) });
+		const step = (frame: number) =>
+			distance({ track: kicked, frame: frame + 1 }) - distance({ track: kicked, frame });
+		expect(step(100)).toBeGreaterThan(1.8 * step(50));
 	});
 
 	it("rushes through loud parts and crawls through quiet ones", () => {

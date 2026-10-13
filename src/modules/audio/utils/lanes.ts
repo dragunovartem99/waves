@@ -6,11 +6,8 @@ export type Lane = 0 | 1 | 2;
 type Song = { spectra: Float32Array[]; onsets: number[] };
 
 // FFT bins at HOP 1024 and 44.1 kHz (~43 Hz each): bass, mids, highs.
-const BANDS = [
-	{ from: 1, to: 6 },
-	{ from: 6, to: 93 },
-	{ from: 93, to: 372 },
-];
+export const BASS = { from: 1, to: 6 };
+const BANDS = [BASS, { from: 6, to: 93 }, { from: 93, to: 372 }];
 const LANES = [0, 1, 2] as const;
 
 const strongest = (scores: number[]) =>

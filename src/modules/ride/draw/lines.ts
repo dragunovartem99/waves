@@ -5,8 +5,9 @@ import { LANES, project } from "../utils/project";
 import type { Dot, Pen } from "./canvas";
 import { ACCENT, BACKDROP, GUIDE, INK, trace } from "./canvas";
 
-export type Line = { pen: Pen; depth: number; values: Float32Array };
-type At = { pen: Pen; depth: number; u: number; value: number };
+// `kick` and `phase` are shared by every line in a frame: the whole field wobbles together.
+export type Line = { pen: Pen; depth: number; values: Float32Array; kick: number; phase: number };
+type At = { pen: Pen; depth: number; u: number; value: number; kick?: number; phase?: number };
 
 const SEGMENT = 0.07;
 const SKIRT = 0.06;
@@ -16,13 +17,13 @@ const unit = (pen: Pen) => pen.height / 1000;
 
 export const clamp = (value: number) => Math.min(1, Math.max(0, value));
 
-function dot({ pen, depth, u, value }: At) {
-	const { x, y, scale } = project({ depth, u, value });
+function dot({ pen, ...point }: At) {
+	const { x, y, scale } = project(point);
 	return { x: x * pen.width, y: y * pen.height, scale };
 }
 
-const dots = ({ pen, depth, values }: Line): Dot[] =>
-	[...values].map((value, k) => dot({ pen, depth, u: k / (POINTS - 1), value }));
+const dots = ({ values, ...line }: Line): Dot[] =>
+	[...values].map((value, k) => dot({ ...line, u: k / (POINTS - 1), value }));
 
 // Fills black below itself before stroking, so nearer ridges hide farther ones.
 export function ridge(line: Line) {
@@ -69,8 +70,9 @@ export function guides(pen: Pen) {
 }
 
 export function player({ line, u }: { line: Line; u: number }) {
-	const { pen, values } = line;
-	const { x, y } = dot({ pen, depth: 0, u, value: values[Math.round(u * (POINTS - 1))] ?? 0 });
+	const { pen, values, kick, phase } = line;
+	const value = values[Math.round(u * (POINTS - 1))] ?? 0;
+	const { x, y } = dot({ pen, depth: 0, u, value, kick, phase });
 	pen.context.fillStyle = ACCENT;
 	pen.context.beginPath();
 	pen.context.arc(x, y, 11 * unit(pen), 0, 2 * Math.PI);
