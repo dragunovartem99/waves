@@ -33,7 +33,7 @@ describe("project", () => {
 	it("grows ridges on a kick", () => {
 		const calm = project({ depth: 0, u: 0.5, value: 1 });
 		const kicked = project({ depth: 0, u: 0.5, value: 1, kick: 1 });
-		expect(kicked.y).toBeLessThan(calm.y - 0.1);
+		expect(kicked.y).toBeLessThan(calm.y - 0.03);
 	});
 
 	it("ripples even a flat ridge on a kick", () => {

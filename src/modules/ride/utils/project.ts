@@ -11,11 +11,11 @@ const FRONT = 0.84;
 const HEIGHT = 0.17;
 const SPREAD = 0.3;
 // On a full kick: ridges grow by LIFT, ripple by RIPPLE across WAVES crests, and dip by DIP.
-const LIFT = 0.9;
-const RIPPLE = 0.025;
+const LIFT = 0.4;
+const RIPPLE = 0.01;
 const WAVES = 2.5;
 const BEND = 6;
-const DIP = 0.015;
+const DIP = 0.008;
 
 // Edges stay low so the ridge reads as a horizon, not a bar chart.
 const weight = (u: number) => 0.15 + 0.85 * Math.exp(-(((u - 0.5) / SPREAD) ** 2));
