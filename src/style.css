@@ -128,6 +128,13 @@ input[type="file"] {
 	right: 10px;
 }
 
+/* With a mouse there's a keyboard: Space and Esc pause, and the icon only gets in the way. */
+@media (hover: hover) and (pointer: fine) {
+	#pause {
+		display: none;
+	}
+}
+
 #pause:is(:hover, :focus-visible) {
 	color: #f1efe9;
 	outline: none;
