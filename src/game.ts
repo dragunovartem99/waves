@@ -105,4 +105,5 @@ menu({
 	title: "WAVES",
 	note: "Drop a song anywhere, or pick one. It never leaves your browser.",
 	actions: [pick],
+	keys: true,
 });

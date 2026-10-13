@@ -53,6 +53,13 @@ describe("hits", () => {
 	});
 });
 
+describe("hits grace", () => {
+	it("has no blocks in the first 3 seconds", () => {
+		const { blocks } = hits(song(1));
+		expect(blocks.every(({ time }) => time >= 3)).toBe(true);
+	});
+});
+
 describe("hits fairness", () => {
 	// Three equally hard hits in three lanes, 0.1 s apart: the third would wall off every lane.
 	const close = [0, 1, 2].map((i) => Math.round((5 + 0.1 * i) * PER_SECOND));
