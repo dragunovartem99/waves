@@ -14,7 +14,7 @@ const song = Float32Array.from({ length: RATE * 4 }, (_, i) => {
 });
 
 describe("analyze", () => {
-	const { envelope, onsets, strengths, lanes, ridges } = analyze(song);
+	const { envelope, onsets, marks, strengths, lanes, ridges } = analyze(song);
 
 	it("gives one envelope value per hop", () => {
 		expect(envelope).toHaveLength(Math.floor(song.length / HOP));
@@ -26,8 +26,12 @@ describe("analyze", () => {
 		);
 	});
 
-	it("gives a lane and a strength per onset", () => {
-		expect([lanes.length, strengths.length]).toEqual([onsets.length, onsets.length]);
+	it("gives a lane and a strength per mark", () => {
+		expect([lanes.length, strengths.length]).toEqual([marks.length, marks.length]);
+	});
+
+	it("marks every onset", () => {
+		expect(marks).toEqual(expect.arrayContaining(onsets));
 	});
 
 	it("gives a ridge per hop", () => {

@@ -29,7 +29,7 @@ const title = (name: string) =>
 export function prepare({ analysis, buffer, name }: Source): Song {
 	const { ridges, kicks, beats } = analysis;
 	const path = track(analysis);
-	const marks = hits(analysis);
+	const marks = hits({ ...analysis, onsets: analysis.marks });
 	return {
 		buffer,
 		ridges,
