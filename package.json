@@ -15,6 +15,7 @@
 	"scripts": {
 		"build": "tsc --noEmit && vite build",
 		"dev": "vite",
+		"dev:bot": "vite --open /waves/?bot",
 		"format": "oxfmt --write",
 		"format:check": "oxfmt --check",
 		"lint": "oxlint --fix",
