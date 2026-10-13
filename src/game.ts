@@ -19,13 +19,12 @@ let ride: Ride | undefined;
 
 const pick = { label: "Pick a song", run: () => input.click() };
 const again = { label: "Ride again", run: () => ride && start(ride.song) };
-const score = (run: Run) => `SCORE ${String(run.score.score).padStart(5, "0")}`;
 
 function end({ run }: Ride) {
 	pauseButton.hidden = true;
 	menu({
 		title: run.health.lives === 0 ? "GAME OVER" : "CLEAR",
-		note: score(run),
+		note: `SCORE ${String(run.score.score).padStart(5, "0")}`,
 		actions: [again, pick],
 	});
 }
@@ -59,6 +58,7 @@ function start(song: Song) {
 	ride = { song, playback: play({ context, buffer: song.buffer }), run: FRESH, paused: false };
 	close();
 	pauseButton.hidden = false;
+	pauseButton.ariaPressed = "false";
 	requestAnimationFrame(frame);
 }
 
@@ -67,9 +67,9 @@ function pause() {
 	if (!ride || ride.paused || ride.run.ended) return;
 	ride = { ...ride, paused: true };
 	void context.suspend();
-	pauseButton.hidden = true;
+	pauseButton.ariaPressed = "true";
 	const resume = { label: "Resume", run: () => unpause() };
-	menu({ title: "PAUSED", note: score(ride.run), actions: [resume, again, pick] });
+	menu({ title: "PAUSED", actions: [resume, again, pick] });
 }
 
 function unpause() {
@@ -77,7 +77,7 @@ function unpause() {
 	ride = { ...ride, paused: false };
 	void context.resume();
 	close();
-	pauseButton.hidden = false;
+	pauseButton.ariaPressed = "false";
 	requestAnimationFrame(frame);
 }
 
@@ -85,9 +85,9 @@ async function load(file: File) {
 	ride?.playback.stop();
 	ride = undefined;
 	pauseButton.hidden = true;
-	menu({ title: "DECODING…", note: file.name });
+	menu({ title: "DECODING", note: file.name });
 	const buffer = await decode({ context, file });
-	menu({ title: "ANALYZING…", note: file.name });
+	menu({ title: "ANALYZING", note: file.name });
 	const analysis = await analyzeOffThread(samples(buffer));
 	start(prepare({ analysis, buffer, name: file.name }));
 }

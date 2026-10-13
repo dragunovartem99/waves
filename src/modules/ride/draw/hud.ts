@@ -19,8 +19,8 @@ const SCORE = 0.12;
 const DIGITS = 5;
 const FLASH = 0.35;
 const DOT = 0.008;
-// CSS pixels kept free at the right end of the lives row for the pause button (an HTML element
-// laid over the canvas, see #pause in style.css).
+// CSS pixels kept free at the left of the timeline for the pause button (an HTML element laid
+// over the canvas, see #pause in style.css).
 const SLOT = 40;
 
 function score({ pen, score: { score: points, streak } }: Hud) {
@@ -40,9 +40,10 @@ function score({ pen, score: { score: points, streak } }: Hud) {
 
 function footer({ pen, title, now, duration }: Hud) {
 	const { context, width, height } = pen;
-	mono({ pen, text: title, x: MARGIN, y: 0.952 });
+	const start = MARGIN + (SLOT * devicePixelRatio) / width;
+	mono({ pen, text: title, x: start, y: 0.952 });
 	mono({ pen, text: `${clock(now)} / ${clock(duration)}`, x: 1 - MARGIN, y: 0.952 });
-	const [left, full] = [MARGIN * width, (1 - 2 * MARGIN) * width];
+	const [left, full] = [start * width, (1 - MARGIN - start) * width];
 	context.fillStyle = "#333";
 	context.fillRect(left, 0.97 * height, full, Math.max(1, height / 1000));
 	context.fillStyle = ACCENT;
@@ -56,12 +57,11 @@ function footer({ pen, title, now, duration }: Hud) {
 
 function lives({ pen, lives: left }: Hud) {
 	const { context, width, height } = pen;
-	const slot = (SLOT * devicePixelRatio) / width;
-	mono({ pen, text: "LIVES", x: 1 - MARGIN - slot - 0.07, y: 0.056, color: DIM });
+	mono({ pen, text: "LIVES", x: 1 - MARGIN - 0.07, y: 0.056, color: DIM });
 	Array.from({ length: LIVES }, (_, i) => {
 		context.beginPath();
 		context.arc(
-			(1 - MARGIN - slot - i * 0.022) * width - DOT * height,
+			(1 - MARGIN - i * 0.022) * width - DOT * height,
 			0.05 * height,
 			DOT * height,
 			0,
