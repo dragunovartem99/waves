@@ -96,12 +96,12 @@ input[type="file"] {
 	text-underline-offset: 6px;
 }
 
-/* Two bars drawn in CSS: a text "II" looked like a stray glyph. */
+/* Two bars drawn in CSS: a text "II" looked like a stray glyph. In the corner, outside the HUD
+   columns: in the middle of the screen it got in the way. */
 #pause {
 	position: fixed;
-	top: 24px;
-	left: 50%;
-	translate: -50% 0;
+	top: 8px;
+	right: 8px;
 	width: 32px;
 	height: 32px;
 	color: #8a8883;
@@ -114,18 +114,18 @@ input[type="file"] {
 #pause::after {
 	content: "";
 	position: absolute;
-	top: 9px;
-	width: 4px;
-	height: 14px;
+	top: 10px;
+	width: 3px;
+	height: 12px;
 	background: currentColor;
 }
 
 #pause::before {
-	left: 10px;
+	left: 11px;
 }
 
 #pause::after {
-	right: 10px;
+	right: 11px;
 }
 
 #pause:is(:hover, :focus-visible) {

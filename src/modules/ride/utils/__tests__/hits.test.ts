@@ -18,9 +18,11 @@ const song = (level: number) => ({
 const seconds = (frame: number) => (frame * HOP) / RATE;
 
 describe("hits", () => {
-	it("splits every onset into a pickup or a block", () => {
+	it("splits every onset after the quiet start into a pickup or a block", () => {
 		const { pickups, blocks } = hits(song(0.5));
-		expect(pickups.length + blocks.length).toBe(onsets.length);
+		expect(pickups.length + blocks.length).toBe(
+			onsets.filter((frame) => seconds(frame) >= 2).length
+		);
 	});
 
 	it("puts more blocks in full music than in sparse", () => {
@@ -43,7 +45,7 @@ describe("hits", () => {
 	});
 
 	it("keeps each onset's time and lane", () => {
-		const first = { time: seconds(Math.round(PER_SECOND)), lane: 1 };
+		const first = { time: seconds(Math.round(3 * PER_SECOND)), lane: 1 };
 		expect(hits(song(0.5)).pickups[0]).toEqual(first);
 	});
 
@@ -54,6 +56,11 @@ describe("hits", () => {
 });
 
 describe("hits grace", () => {
+	it("has nothing at all in the first 2 seconds", () => {
+		const { pickups, blocks } = hits(song(1));
+		expect([...pickups, ...blocks].every(({ time }) => time >= 2)).toBe(true);
+	});
+
 	it("has no blocks in the first 3 seconds", () => {
 		const { blocks } = hits(song(1));
 		expect(blocks.every(({ time }) => time >= 3)).toBe(true);
