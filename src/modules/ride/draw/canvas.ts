@@ -1,7 +1,7 @@
 export type Pen = { context: CanvasRenderingContext2D; width: number; height: number };
 export type Dot = { x: number; y: number };
 
-export const ACCENT = "#ff3b1f";
+export const ACCENT = "#ff6b1a";
 export const INK = "#f1efe9";
 export const DIM = "#8a8883";
 export const GUIDE = "#2a2a2a";

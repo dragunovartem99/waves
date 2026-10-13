@@ -73,8 +73,12 @@ export function player({ line, u }: { line: Line; u: number }) {
 	const { pen, values, kick, phase } = line;
 	const value = values[Math.round(u * (POINTS - 1))] ?? 0;
 	const { x, y } = dot({ pen, depth: 0, u, value, kick, phase });
-	pen.context.fillStyle = ACCENT;
+	// White with an orange ring, so orange on the field always means a block.
 	pen.context.beginPath();
-	pen.context.arc(x, y, 11 * unit(pen), 0, 2 * Math.PI);
+	pen.context.arc(x, y, 10 * unit(pen), 0, 2 * Math.PI);
+	pen.context.fillStyle = INK;
 	pen.context.fill();
+	pen.context.strokeStyle = ACCENT;
+	pen.context.lineWidth = 3 * unit(pen);
+	pen.context.stroke();
 }
