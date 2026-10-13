@@ -29,8 +29,7 @@ input[type="file"] {
 	justify-items: center;
 	gap: 14px;
 	padding: 16px;
-	background: rgb(0 0 0 / 0.92);
-	backdrop-filter: blur(6px);
+	background: radial-gradient(rgb(0 0 0 / 0.95) 20%, rgb(0 0 0 / 0.75));
 	font:
 		400 14px/1.4 "JetBrains Mono",
 		monospace;
