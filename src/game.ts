@@ -1,7 +1,7 @@
 import type { Lane, Playback } from "@/modules/audio";
 import { analyzeOffThread, decode, play, RATE, samples } from "@/modules/audio";
 import type { Run, Song } from "@/modules/ride";
-import { advance, fit, FRESH, loadFonts, prepare, show } from "@/modules/ride";
+import { advance, aim, fit, FRESH, loadFonts, prepare, show } from "@/modules/ride";
 
 import { controls } from "./controls";
 import { $, onFile } from "./dom";
@@ -13,6 +13,8 @@ const context = new AudioContext({ sampleRate: RATE });
 const canvas = $<HTMLCanvasElement>("#ride");
 const input = $<HTMLInputElement>("#file");
 const pauseButton = $<HTMLButtonElement>("#pause");
+// `?bot` rides for you: every pickup, no blocks. For recording demos.
+const bot = new URLSearchParams(location.search).has("bot");
 let ride: Ride | undefined;
 
 const pick = { label: "Pick a song", run: () => input.click() };
@@ -33,10 +35,14 @@ function frame() {
 	const { song, playback } = ride;
 	const { duration } = song.buffer;
 	const now = Math.min(playback.position(), duration);
+	const { pickups, blocks } = song;
+	const steered = bot
+		? { ...ride.run, lane: aim({ run: ride.run, pickups, blocks, now }) }
+		: ride.run;
 	const run = advance({
-		run: ride.run,
-		pickups: song.pickups,
-		blocks: song.blocks,
+		run: steered,
+		pickups,
+		blocks,
 		now,
 		duration,
 	});
@@ -87,7 +93,7 @@ async function load(file: File) {
 }
 
 function steer(move: Record<Lane, Lane>) {
-	if (ride && !ride.paused && !ride.run.ended)
+	if (!bot && ride && !ride.paused && !ride.run.ended)
 		ride = { ...ride, run: { ...ride.run, lane: move[ride.run.lane] } };
 }
 
