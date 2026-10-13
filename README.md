@@ -1,5 +1,7 @@
 # waves
 
+![A ride: perspective ridges of the song's spectrum, white pickups and a red block in the lanes, score and lives on top](docs/screenshot.png)
+
 Drop in a song and ride it: an Audiosurf-like game in the browser. The track is built from the music itself: ridges are its spectrum and arrive on the beat, choruses and drops speed you up, kicks shake the field. Every hit lands in a lane by its band (bass, mids, highs): catch the white ones, dodge the red ones. Three red hits and the song stops.
 
 Play at [dragunovartem99.github.io/waves](https://dragunovartem99.github.io/waves). Steer with ← → or by tapping either half of the screen. The song never leaves your browser.
