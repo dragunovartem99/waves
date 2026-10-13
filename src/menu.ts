@@ -1,12 +1,14 @@
 import { $ } from "./dom";
 
 export type Action = { label: string; run: () => void };
-type Screen = { title: string; note?: string; actions?: Action[] };
+// `keys` shows the controls line; only the start screen needs it.
+type Screen = { title: string; note?: string; actions?: Action[]; keys?: boolean };
 
 const panel = $<HTMLElement>("#menu");
 const title = $("#menu-title");
 const note = $("#menu-note");
 const actions = $("#menu-actions");
+const keys = $<HTMLElement>("#menu .keys");
 
 function button({ label, run }: Action) {
 	const element = document.createElement("button");
@@ -21,6 +23,7 @@ export function menu(screen: Screen) {
 	title.textContent = screen.title;
 	note.textContent = screen.note ?? "";
 	actions.replaceChildren(...(screen.actions ?? []).map((action) => button(action)));
+	keys.hidden = !screen.keys;
 	panel.hidden = false;
 	actions.querySelector("button")?.focus();
 }

@@ -27,18 +27,19 @@ input[type="file"] {
 	display: grid;
 	place-content: center;
 	justify-items: center;
-	gap: 18px;
+	gap: 14px;
 	padding: 16px;
-	background: rgb(0 0 0 / 0.72);
+	background: rgb(0 0 0 / 0.8);
 	font:
-		400 15px/1.4 "JetBrains Mono",
+		400 14px/1.4 "JetBrains Mono",
 		monospace;
 	color: #f1efe9;
 	text-align: center;
 }
 
 #menu[hidden],
-#pause[hidden] {
+#pause[hidden],
+#menu .keys[hidden] {
 	display: none;
 }
 
@@ -48,9 +49,9 @@ input[type="file"] {
 
 #menu-title {
 	font:
-		900 clamp(40px, 9vw, 96px) / 1 Archivo,
-		sans-serif;
-	letter-spacing: -0.02em;
+		700 16px "JetBrains Mono",
+		monospace;
+	letter-spacing: 0.2em;
 }
 
 #menu-note,
@@ -58,54 +59,78 @@ input[type="file"] {
 	color: #8a8883;
 }
 
+#menu .keys {
+	font-size: 12px;
+	margin-top: 8px;
+}
+
 #menu-actions {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: center;
-	gap: 12px;
-	margin-top: 12px;
+	gap: 8px 28px;
+	margin-top: 10px;
 }
 
-#menu button,
-#pause {
+#menu button {
 	font:
-		700 15px "JetBrains Mono",
+		700 14px "JetBrains Mono",
 		monospace;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
-	color: #f1efe9;
-	background: transparent;
-	border: 1px solid #f1efe9;
-	padding: 12px 20px;
+	color: #8a8883;
+	background: none;
+	border: 0;
+	padding: 6px 0;
 	cursor: pointer;
 }
 
 #menu button:first-child {
-	border-color: #ff3b1f;
 	color: #ff3b1f;
 }
 
-#menu button:hover,
-#menu button:focus-visible,
-#pause:hover {
-	background: #f1efe9;
-	color: #000;
+#menu button:is(:hover, :focus-visible) {
+	color: #f1efe9;
 	outline: none;
+	text-decoration: underline;
+	text-underline-offset: 6px;
 }
 
-#menu button:first-child:is(:hover, :focus-visible) {
-	background: #ff3b1f;
-	color: #000;
-}
-
+/* Two bars drawn in CSS: a text "II" looked like a stray glyph. */
 #pause {
 	position: fixed;
-	top: 16px;
+	top: 24px;
 	left: 50%;
 	translate: -50% 0;
-	padding: 8px 14px;
-	border-color: #333;
+	width: 32px;
+	height: 32px;
 	color: #8a8883;
+	background: none;
+	border: 0;
+	cursor: pointer;
+}
+
+#pause::before,
+#pause::after {
+	content: "";
+	position: absolute;
+	top: 9px;
+	width: 4px;
+	height: 14px;
+	background: currentColor;
+}
+
+#pause::before {
+	left: 10px;
+}
+
+#pause::after {
+	right: 10px;
+}
+
+#pause:is(:hover, :focus-visible) {
+	color: #f1efe9;
+	outline: none;
 }
 
 main,

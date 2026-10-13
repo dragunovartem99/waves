@@ -14,6 +14,8 @@ const SPARSE = 0.4;
 const FULL = 2;
 // Never more than this share of hits, so dense parts still leave plenty to catch.
 const MOST = 0.6;
+// Seconds at the start with no blocks, so a ride never opens with a crash.
+const GRACE = 3;
 // Seconds in which blocks must never cover all three lanes, so there's always a way through.
 const REACH = 0.35;
 
@@ -49,10 +51,13 @@ export function hits({ onsets, lanes, strengths, intensity }: Onsets) {
 		return rank >= 1 - Math.min(MOST, rate(onset) / density);
 	};
 	const all = fair(
-		onsets.map((onset, i) => ({
-			hit: { time: (onset * HOP) / RATE, lane: lanes[i] ?? 1 },
-			block: blocked(onset, i),
-		}))
+		onsets.map((onset, i) => {
+			const time = (onset * HOP) / RATE;
+			return {
+				hit: { time, lane: lanes[i] ?? 1 },
+				block: time >= GRACE && blocked(onset, i),
+			};
+		})
 	);
 	return {
 		pickups: all.filter(({ block }) => !block).map(({ hit }): Hit => hit),
