@@ -1,0 +1,37 @@
+:root {
+	color-scheme: dark;
+	font-family: system-ui, sans-serif;
+	background: #0b0b12;
+	color: #e8e8f0;
+}
+
+main {
+	max-width: 960px;
+	margin: 0 auto;
+	padding: 24px 16px;
+}
+
+label {
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+input[type="file"] {
+	display: none;
+}
+
+canvas {
+	display: block;
+	width: 100%;
+	margin-top: 16px;
+	background: #13131d;
+	border-radius: 8px;
+}
+
+#overview {
+	height: 120px;
+}
+
+#zoom {
+	height: 240px;
+}

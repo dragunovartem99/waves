@@ -1,22 +1,29 @@
-type At = { values: Float32Array; i: number };
+type At = { values: Float32Array; i: number; floor: number };
 
 const WINDOW = 10;
 const MULTIPLIER = 1.5;
-// Keeps silence and fades from turning every tiny bump into an onset; tune on the graph.
-const FLOOR = 1;
+// Share of the song's mean flux every onset must clear, so silence and fades don't turn each
+// tiny bump into one; relative because flux scale varies with the song.
+const FLOOR = 0.5;
 
-function threshold({ values, i }: At) {
+const mean = (values: Float32Array) =>
+	values.reduce((sum, value) => sum + value, 0) / values.length;
+
+function threshold({ values, i, floor }: At) {
 	const local = values.subarray(Math.max(0, i - WINDOW), i + WINDOW + 1).toSorted();
-	return MULTIPLIER * (local[Math.floor(local.length / 2)] ?? 0) + FLOOR;
+	return MULTIPLIER * (local[Math.floor(local.length / 2)] ?? 0) + floor;
 }
 
 // `>=` on the right so a flat top yields its first frame only.
-function isPeak({ values, i }: At) {
+function isPeak(at: At) {
+	const { values, i } = at;
 	const value = values[i] ?? 0;
 	const local = value > (values[i - 1] ?? 0) && value >= (values[i + 1] ?? 0);
-	return local && value > threshold({ values, i });
+	return local && value > threshold(at);
 }
 
 // Onsets as frame indices: local maxima above an adaptive threshold (moving median).
-export const peaks = (values: Float32Array) =>
-	[...values.keys()].filter((i) => isPeak({ values, i }));
+export function peaks(values: Float32Array) {
+	const floor = FLOOR * mean(values);
+	return [...values.keys()].filter((i) => isPeak({ values, i, floor }));
+}

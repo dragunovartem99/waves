@@ -12,8 +12,8 @@ describe("peaks", () => {
 		expect(peaks(signal({ base: 2, spikes: { 10: 9, 30: 8 } }))).toEqual([10, 30]);
 	});
 
-	it("ignores tiny bumps in silence", () => {
-		expect(peaks(signal({ base: 0, spikes: { 10: 0.5 } }))).toEqual([]);
+	it("ignores tiny bumps far below the song's hits", () => {
+		expect(peaks(signal({ base: 0, spikes: { 10: 0.05, 30: 50 } }))).toEqual([30]);
 	});
 
 	it("ignores a spike that barely tops a busy passage", () => {

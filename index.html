@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		/>
+		<title>groove</title>
+	</head>
+	<body>
+		<main>
+			<h1>groove</h1>
+			<p>
+				Drop a song anywhere, or
+				<label
+					>pick one
+					<input
+						id="file"
+						type="file"
+						accept="audio/*"
+				/></label>
+			</p>
+			<p id="status">No song yet.</p>
+			<button
+				id="play"
+				type="button"
+				disabled
+			>
+				Play
+			</button>
+			<canvas id="overview"></canvas>
+			<canvas id="zoom"></canvas>
+		</main>
+		<script
+			type="module"
+			src="/src/main.ts"
+		></script>
+	</body>
+</html>

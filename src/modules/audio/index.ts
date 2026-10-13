@@ -1,5 +1,5 @@
-export { envelope, HOP } from "./utils/envelope";
-export { smooth } from "./utils/smooth";
-export { spectrum } from "./utils/spectrum";
-export { flux } from "./utils/flux";
-export { peaks } from "./utils/peaks";
+export { analyzeOffThread } from "./offThread";
+export { decode, samples } from "./decode";
+export { type Playback, play } from "./play";
+export { type Analysis, analyze } from "./utils/analyze";
+export { HOP } from "./utils/frames";

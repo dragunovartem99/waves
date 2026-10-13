@@ -1,0 +1,6 @@
+import { analyze } from "./utils/analyze";
+
+self.addEventListener("message", (event: MessageEvent<Float32Array>) => {
+	const analysis = analyze(event.data);
+	self.postMessage(analysis, { transfer: [analysis.envelope.buffer] });
+});
