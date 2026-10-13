@@ -1,9 +1,9 @@
-import { HOP } from "./frames";
+import { HOP, RATE } from "./frames";
 
 export const POINTS = 96;
 const LOW = 40;
 const HIGH = 12_000;
-const BIN_HZ = 44_100 / HOP;
+const BIN_HZ = RATE / HOP;
 const COMPRESSION = 10;
 const PASSES = 3;
 

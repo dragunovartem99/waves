@@ -1,5 +1,8 @@
 type Point = { depth: number; u: number; value: number };
 
+// Where each lane sits across a ridge: bass, mids, highs.
+export const LANES = [0.3, 0.5, 0.7] as const;
+
 // Fractions of the canvas, taken from the 1600×1000 mockup.
 const RECEDE = 2.6;
 const WIDTH = 0.94;
