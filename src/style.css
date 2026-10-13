@@ -29,7 +29,8 @@ input[type="file"] {
 	justify-items: center;
 	gap: 14px;
 	padding: 16px;
-	background: rgb(0 0 0 / 0.8);
+	background: rgb(0 0 0 / 0.92);
+	backdrop-filter: blur(6px);
 	font:
 		400 14px/1.4 "JetBrains Mono",
 		monospace;
@@ -49,9 +50,8 @@ input[type="file"] {
 
 #menu-title {
 	font:
-		700 16px "JetBrains Mono",
-		monospace;
-	letter-spacing: 0.2em;
+		900 clamp(32px, 6vw, 72px) / 1 Archivo,
+		sans-serif;
 }
 
 #menu-note,
@@ -96,14 +96,15 @@ input[type="file"] {
 	text-underline-offset: 6px;
 }
 
-/* Two bars drawn in CSS: a text "II" looked like a stray glyph. Ends the lives row: centred on
-   the dots' line (5 % of the height) with the right bar on the HUD margin (3.9 % of the width). */
+/* Two bars drawn in CSS: a text "II" looked like a stray glyph. Starts the footer: centred
+   between the title and the timeline (95.6 % of the height), left bar on the HUD margin (3.9 %). */
 #pause {
 	position: fixed;
-	top: calc(5dvh - 16px);
-	right: calc(3.9vw - 12px);
-	width: 32px;
-	height: 32px;
+	z-index: 1;
+	top: calc(95.6dvh - 20px);
+	left: calc(3.9vw - 12px);
+	width: 40px;
+	height: 40px;
 	color: #8a8883;
 	background: none;
 	border: 0;
@@ -115,8 +116,8 @@ input[type="file"] {
 	content: "";
 	position: absolute;
 	top: 10px;
-	width: 2px;
-	height: 12px;
+	width: 4px;
+	height: 20px;
 	background: currentColor;
 }
 
@@ -126,6 +127,16 @@ input[type="file"] {
 
 #pause::after {
 	right: 12px;
+}
+
+/* Paused, it stays in the footer as a play triangle over the menu, like a video player's. */
+#pause[aria-pressed="true"]::before {
+	width: 16px;
+	clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+#pause[aria-pressed="true"]::after {
+	display: none;
 }
 
 #pause:is(:hover, :focus-visible) {
