@@ -1,7 +1,8 @@
 import { HOP, POINTS, RATE } from "@/modules/audio";
 
+import type { Ridge } from "../utils/grid";
 import type { Hit } from "../utils/judge";
-import { distance, frameAt } from "../utils/track";
+import { distance } from "../utils/track";
 import type { Pen } from "./canvas";
 import { BACKDROP } from "./canvas";
 import { clamp, guides, hit, player, ridge } from "./lines";
@@ -11,6 +12,7 @@ export type Scene = {
 	pen: Pen;
 	ridges: Float32Array;
 	track: Float32Array;
+	grid: Ridge[];
 	pickups: Hit[];
 	blocks: Hit[];
 	at: number;
@@ -18,31 +20,25 @@ export type Scene = {
 	kick: number;
 	phase: number;
 };
-type Item = { depth: number; frame: number; lane?: Hit["lane"]; block?: boolean };
+type Item = { depth: number; frame: number; beat?: boolean; lane?: Hit["lane"]; block?: boolean };
 
-const RIDGES = 14;
-// Track distance between ridges (~0.2 s at average speed): sparse enough not to turn into
-// Joy Division.
-const SPACING = 9;
-const SPAN = RIDGES * SPACING;
-
-// Fades in over the far two ridges, so new ones don't pop in at the horizon.
-const fade = (depth: number) => clamp(((1 - depth) * RIDGES) / 2);
+// Track distance from the front ridge to the horizon.
+const SPAN = 126;
+// Ridges fade in over the far seventh, so new ones don't pop in at the horizon.
+const FADE = 1 / 7;
+const fade = (depth: number) => clamp((1 - depth) / FADE);
 
 function slice({ ridges, frame }: { ridges: Float32Array; frame: number }) {
 	const f = Math.round(frame);
 	return f < 0 ? new Float32Array(0) : ridges.subarray(f * POINTS, (f + 1) * POINTS);
 }
 
-// Ridges sit at fixed track distances, so they always keep their spacing and only their speed
-// changes with the song's loudness.
-function items({ track, pickups, blocks, at }: Scene): Item[] {
+// Ridges sit on the beat grid, so each one reaches the player in time with the music.
+function items({ track, grid, pickups, blocks, at }: Scene): Item[] {
 	const now = distance({ track, frame: at });
-	const first = Math.floor(now / SPACING) + 1;
-	const lines = Array.from({ length: RIDGES }, (_, i) => {
-		const far = (first + i) * SPACING;
-		return { frame: frameAt({ track, distance: far }), depth: (far - now) / SPAN };
-	});
+	const lines = grid
+		.filter(({ distance: far }) => far > now && far <= now + SPAN)
+		.map(({ frame, beat, distance: far }) => ({ frame, beat, depth: (far - now) / SPAN }));
 	const mark = ({ hit: { time, lane }, block }: { hit: Hit; block: boolean }) => {
 		const frame = (time * RATE) / HOP;
 		return { frame, lane, block, depth: (distance({ track, frame }) - now) / SPAN };
@@ -58,8 +54,8 @@ function items({ track, pickups, blocks, at }: Scene): Item[] {
 
 function paint({ view, item }: { view: Scene; item: Item }) {
 	const { pen, ridges, kick, phase } = view;
-	const { depth, frame, lane, block = false } = item;
-	const line = { pen, depth, values: slice({ ridges, frame }), kick, phase };
+	const { depth, frame, beat = true, lane, block = false } = item;
+	const line = { pen, depth, values: slice({ ridges, frame }), kick, phase, beat };
 	if (line.values.length < POINTS) return;
 	pen.context.globalAlpha = fade(depth);
 	if (lane === undefined) ridge(line);

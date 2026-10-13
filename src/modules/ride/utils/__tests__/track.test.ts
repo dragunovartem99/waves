@@ -32,6 +32,19 @@ describe("track", () => {
 	});
 });
 
+const end = (bpm: number) =>
+	distance({ track: track({ intensity: steady, kicks: still, bpm }), frame: LENGTH });
+
+describe("track tempo", () => {
+	it("rides a faster song faster", () => {
+		expect(end(150) / end(100)).toBeCloseTo(1.5, 2);
+	});
+
+	it("caps how far tempo stretches the pace", () => {
+		expect(end(300)).toBeCloseTo(1.35 * PACE * LENGTH, 0);
+	});
+});
+
 describe("distance", () => {
 	it("interpolates between frames", () => {
 		expect(at(10.5)).toBeCloseTo((at(10) + at(11)) / 2, 5);

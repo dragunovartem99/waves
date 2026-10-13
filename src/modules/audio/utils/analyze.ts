@@ -1,3 +1,4 @@
+import { beats } from "./beats";
 import { envelope } from "./envelope";
 import { flux } from "./flux";
 import { frames, HOP } from "./frames";
@@ -9,6 +10,7 @@ import { peaks } from "./peaks";
 import { ridges } from "./ridges";
 import { smooth } from "./smooth";
 import { spectrum } from "./spectrum";
+import { tempo } from "./tempo";
 
 export type Analysis = {
 	envelope: Float32Array;
@@ -21,6 +23,9 @@ export type Analysis = {
 	kicks: Float32Array;
 	// How full the music is per frame, 0–1 within the song.
 	intensity: Float32Array;
+	bpm: number;
+	// Beat frames, tracked so they follow small tempo drifts.
+	beats: number[];
 };
 
 const SMOOTHING = 0.05;
@@ -32,6 +37,7 @@ export function analyze(samples: Float32Array): Analysis {
 	const rises = flux(spectra);
 	const onsets = peaks(rises);
 	const loudness = smooth({ values: envelope(hops), factor: SMOOTHING });
+	const bpm = tempo(rises);
 	return {
 		envelope: loudness,
 		onsets,
@@ -40,5 +46,7 @@ export function analyze(samples: Float32Array): Analysis {
 		ridges: ridges(spectra),
 		kicks: kicks(spectra),
 		intensity: intensity({ spectra, loudness }),
+		bpm,
+		beats: beats({ flux: rises, bpm }),
 	};
 }

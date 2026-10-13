@@ -6,12 +6,22 @@ import type { Dot, Pen } from "./canvas";
 import { ACCENT, BACKDROP, GUIDE, INK, trace } from "./canvas";
 
 // `kick` and `phase` are shared by every line in a frame: the whole field wobbles together.
-export type Line = { pen: Pen; depth: number; values: Float32Array; kick: number; phase: number };
+// `beat` marks a ridge on the beat; the ones between are dimmer and thinner.
+export type Line = {
+	pen: Pen;
+	depth: number;
+	values: Float32Array;
+	kick: number;
+	phase: number;
+	beat?: boolean;
+};
 type At = { pen: Pen; depth: number; u: number; value: number; kick?: number; phase?: number };
 
 const SEGMENT = 0.07;
 const SKIRT = 0.06;
 const GUIDES = [0.4, 0.6];
+// Brightness of ridges between beats, relative to the beat ridges.
+const OFFBEAT = 0.6;
 // Mockup sizes were drawn on a 1000 px tall canvas.
 const unit = (pen: Pen) => pen.height / 1000;
 
@@ -36,10 +46,10 @@ export function ridge(line: Line) {
 	trace({ context, dots: [...points, ...edges] });
 	context.fillStyle = BACKDROP;
 	context.fill();
-	const shade = Math.round(70 + 170 * (1 - clamp(depth)));
+	const shade = Math.round((70 + 170 * (1 - clamp(depth))) * (line.beat === false ? OFFBEAT : 1));
 	trace({ context, dots: points });
 	context.strokeStyle = `rgb(${shade} ${shade - 2} ${shade - 6})`;
-	context.lineWidth = Math.max(1, 2.4 * scale) * unit(pen);
+	context.lineWidth = Math.max(1, (line.beat === false ? 1.6 : 2.6) * scale) * unit(pen);
 	context.stroke();
 }
 

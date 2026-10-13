@@ -1,9 +1,12 @@
-type Song = { intensity: Float32Array; kicks: Float32Array };
+type Song = { intensity: Float32Array; kicks: Float32Array; bpm?: number };
 type At = { track: Float32Array; frame: number };
 type Find = { track: Float32Array; distance: number };
 
-// Average distance per frame; with ridges SPAN apart in distance, sets how far ahead you see.
-export const PACE = 1.6;
+// Average distance per frame at 120 BPM; with the view SPAN deep, sets how far ahead you see.
+export const PACE = 1.4;
+// Faster songs ride faster overall, within limits so slow ones don't drag or fast ones blur.
+const TEMPO = 120;
+const TEMPO_RANGE = [0.8, 1.35] as const;
 // Speed range before scaling to PACE: sparse parts crawl, full ones (choruses, drops) rush.
 const SLOW = 0.4;
 const FAST = 3;
@@ -12,14 +15,17 @@ const CURVE = 1.5;
 // Extra speed at a full kick, so each one shoves you forward.
 const JOLT = 1.5;
 
-// Distance travelled by the start of each frame, averaging PACE per frame.
-export function track({ intensity, kicks }: Song) {
+const pace = (bpm: number) =>
+	PACE * Math.min(TEMPO_RANGE[1], Math.max(TEMPO_RANGE[0], bpm / TEMPO));
+
+// Distance travelled by the start of each frame, averaging PACE per frame (scaled by tempo).
+export function track({ intensity, kicks, bpm = TEMPO }: Song) {
 	const speeds = intensity.map(
 		(x, i) => SLOW + (FAST - SLOW) * x ** CURVE + JOLT * (kicks[i] ?? 0)
 	);
 	const mean = speeds.reduce((sum, speed) => sum + speed, 0) / (speeds.length || 1);
 	const out = new Float32Array(speeds.length + 1);
-	speeds.forEach((speed, i) => (out[i + 1] = (out[i] ?? 0) + (PACE * speed) / mean));
+	speeds.forEach((speed, i) => (out[i + 1] = (out[i] ?? 0) + (pace(bpm) * speed) / mean));
 	return out;
 }
 
