@@ -96,12 +96,12 @@ input[type="file"] {
 	text-underline-offset: 6px;
 }
 
-/* Two bars drawn in CSS: a text "II" looked like a stray glyph. In the corner, outside the HUD
-   columns: in the middle of the screen it got in the way. */
+/* Two bars drawn in CSS: a text "II" looked like a stray glyph. Ends the lives row: centred on
+   the dots' line (5 % of the height) with the right bar on the HUD margin (3.9 % of the width). */
 #pause {
 	position: fixed;
-	top: 8px;
-	right: 8px;
+	top: calc(5dvh - 16px);
+	right: calc(3.9vw - 12px);
 	width: 32px;
 	height: 32px;
 	color: #8a8883;
@@ -115,17 +115,17 @@ input[type="file"] {
 	content: "";
 	position: absolute;
 	top: 10px;
-	width: 3px;
+	width: 2px;
 	height: 12px;
 	background: currentColor;
 }
 
 #pause::before {
-	left: 11px;
+	left: 12px;
 }
 
 #pause::after {
-	right: 11px;
+	right: 12px;
 }
 
 #pause:is(:hover, :focus-visible) {
