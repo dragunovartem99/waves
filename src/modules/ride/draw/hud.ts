@@ -19,6 +19,9 @@ const SCORE = 0.12;
 const DIGITS = 5;
 const FLASH = 0.35;
 const DOT = 0.008;
+// CSS pixels kept free at the right end of the lives row for the pause button (an HTML element
+// laid over the canvas, see #pause in style.css).
+const SLOT = 40;
 
 function score({ pen, score: { score: points, streak } }: Hud) {
 	const { context, width, height } = pen;
@@ -53,11 +56,12 @@ function footer({ pen, title, now, duration }: Hud) {
 
 function lives({ pen, lives: left }: Hud) {
 	const { context, width, height } = pen;
-	mono({ pen, text: "LIVES", x: 1 - MARGIN - 0.07, y: 0.056, color: DIM });
+	const slot = (SLOT * devicePixelRatio) / width;
+	mono({ pen, text: "LIVES", x: 1 - MARGIN - slot - 0.07, y: 0.056, color: DIM });
 	Array.from({ length: LIVES }, (_, i) => {
 		context.beginPath();
 		context.arc(
-			(1 - MARGIN - i * 0.022) * width - DOT * height,
+			(1 - MARGIN - slot - i * 0.022) * width - DOT * height,
 			0.05 * height,
 			DOT * height,
 			0,
