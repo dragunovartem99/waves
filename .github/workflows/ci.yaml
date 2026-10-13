@@ -1,0 +1,13 @@
+name: CI
+
+on:
+    pull_request:
+        branches: ["main"]
+
+jobs:
+    pipes:
+        uses: dragunovartem99/pipes/.github/workflows/ci-checks.yaml@v3.1.0
+        with:
+            setup: node
+            runner: npm run
+            checks: '["format:check", "types:check", "lint:check", "test:coverage", "build"]'

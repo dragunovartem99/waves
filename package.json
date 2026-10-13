@@ -1,0 +1,45 @@
+{
+	"name": "groove",
+	"private": true,
+	"description": "Drop in a song and ride it: an Audiosurf-like game in the browser",
+	"homepage": "https://dragunovartem99.github.io/groove",
+	"author": {
+		"name": "Artem Dragunov",
+		"email": "dragunovartem99@gmail.com"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dragunovartem99/groove.git"
+	},
+	"type": "module",
+	"scripts": {
+		"build": "tsc --noEmit && vite build",
+		"dev": "vite",
+		"format": "oxfmt --write",
+		"format:check": "oxfmt --check",
+		"lint": "oxlint --fix",
+		"lint:check": "oxlint",
+		"prepare": "husky",
+		"preview": "vite preview",
+		"test": "vitest run",
+		"test:coverage": "vitest run --coverage",
+		"types:check": "tsc --noEmit"
+	},
+	"dependencies": {
+		"three": "^0.186.1"
+	},
+	"devDependencies": {
+		"@dragunovartem99/oxfmt-config": "^2.2.0",
+		"@dragunovartem99/oxlint-config": "^3.1.0",
+		"@types/node": "^26.6.5",
+		"@types/three": "^0.186.0",
+		"@vitest/coverage-v8": "^5.0.4",
+		"husky": "^9.1.7",
+		"typescript": "~6.0.3",
+		"vite": "^8.3.4",
+		"vitest": "^5.0.4"
+	},
+	"engines": {
+		"node": ">=24"
+	}
+}
