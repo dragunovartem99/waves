@@ -1,15 +1,15 @@
 {
-	"name": "groove",
+	"name": "waves",
 	"private": true,
 	"description": "Drop in a song and ride it: an Audiosurf-like game in the browser",
-	"homepage": "https://dragunovartem99.github.io/groove",
+	"homepage": "https://dragunovartem99.github.io/waves",
 	"author": {
 		"name": "Artem Dragunov",
 		"email": "dragunovartem99@gmail.com"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/dragunovartem99/groove.git"
+		"url": "git+https://github.com/dragunovartem99/waves.git"
 	},
 	"type": "module",
 	"scripts": {

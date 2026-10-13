@@ -1,4 +1,4 @@
-# groove
+# waves
 
 Drop in a song and ride it: an Audiosurf-like game in the browser. The track is built from the music itself — loud parts run downhill, every hit becomes a block.
 
