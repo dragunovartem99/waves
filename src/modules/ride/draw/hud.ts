@@ -10,7 +10,6 @@ export type Hud = {
 	title: string;
 	now: number;
 	duration: number;
-	hint: string;
 	lives: number;
 	// 1 right after a crash, fading to 0.
 	flash: number;
@@ -36,11 +35,10 @@ function score({ pen, score: { score: points, streak } }: Hud) {
 	mono({ pen, text: `×${streak}`, x: MARGIN + 0.05, y: 0.09 + SCORE, color: ACCENT, bold: true });
 }
 
-function footer({ pen, title, now, duration, hint }: Hud) {
+function footer({ pen, title, now, duration }: Hud) {
 	const { context, width, height } = pen;
 	mono({ pen, text: title, x: MARGIN, y: 0.952 });
 	mono({ pen, text: `${clock(now)} / ${clock(duration)}`, x: 1 - MARGIN, y: 0.952 });
-	mono({ pen, text: hint, x: 0.5, y: 0.94, color: DIM });
 	const [left, full] = [MARGIN * width, (1 - 2 * MARGIN) * width];
 	context.fillStyle = "#333";
 	context.fillRect(left, 0.97 * height, full, Math.max(1, height / 1000));

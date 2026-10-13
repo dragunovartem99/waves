@@ -14,8 +14,10 @@ const SPARSE = 0.4;
 const FULL = 2;
 // Never more than this share of hits, so dense parts still leave plenty to catch.
 const MOST = 0.6;
-// Seconds at the start with no blocks, so a ride never opens with a crash.
+// Seconds at the start with no blocks, so a ride never opens with a crash, and with nothing
+// at all, so it opens on the music.
 const GRACE = 3;
+const QUIET = 2;
 // Seconds in which blocks must never cover all three lanes, so there's always a way through.
 const REACH = 0.35;
 
@@ -60,7 +62,9 @@ export function hits({ onsets, lanes, strengths, intensity }: Onsets) {
 		})
 	);
 	return {
-		pickups: all.filter(({ block }) => !block).map(({ hit }): Hit => hit),
+		pickups: all
+			.filter(({ hit, block }) => !block && hit.time >= QUIET)
+			.map(({ hit }): Hit => hit),
 		blocks: all.filter(({ block }) => block).map(({ hit }): Hit => hit),
 	};
 }

@@ -24,5 +24,5 @@ export function show({ pen, song, run, now }: Frame) {
 	// The loop stops when the ride ends, so a flash there would freeze on screen.
 	const flash = ended ? 0 : Math.max(0, 1 - (now - crashed) / FLASH);
 	const { duration } = song.buffer;
-	hud({ pen, score, title, now, duration, hint: "← →", lives: health.lives, flash });
+	hud({ pen, score, title, now, duration, lives: health.lives, flash });
 }
