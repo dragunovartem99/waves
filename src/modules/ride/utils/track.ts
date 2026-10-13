@@ -4,9 +4,10 @@ type Find = { track: Float32Array; distance: number };
 
 // Average distance per frame at 120 BPM; with the view SPAN deep, sets how far ahead you see.
 export const PACE = 1.4;
-// Faster songs ride faster overall, within limits so slow ones don't drag or fast ones blur.
+// Faster songs ride faster overall, up to a limit so they don't blur. Slow songs keep the base
+// pace: riding them slower just made them drag.
 const TEMPO = 120;
-const TEMPO_RANGE = [0.8, 1.35] as const;
+const TEMPO_RANGE = [1, 1.35] as const;
 // Speed range before scaling to PACE: sparse parts cruise, full ones (choruses, drops) rush.
 // The floor stays high: intensity is ranked, so every intro lands at the bottom however busy.
 const SLOW = 1.2;

@@ -2,7 +2,7 @@ import { LIVES } from "../utils/crash";
 import type { Score } from "../utils/judge";
 import type { Pen } from "./canvas";
 import { ACCENT, DIM, INK } from "./canvas";
-import { clock, MARGIN, message, mono } from "./text";
+import { clock, MARGIN, mono } from "./text";
 
 export type Hud = {
 	pen: Pen;
@@ -14,7 +14,6 @@ export type Hud = {
 	lives: number;
 	// 1 right after a crash, fading to 0.
 	flash: number;
-	banner?: { text: string; note: string };
 };
 // Fractions of the canvas, taken from the 1600×1000 mockup.
 const SCORE = 0.12;
@@ -71,14 +70,6 @@ function lives({ pen, lives: left }: Hud) {
 	});
 }
 
-function banner({ pen, banner: shown }: Hud) {
-	if (!shown) return;
-	const { context, width, height } = pen;
-	context.fillStyle = "rgb(0 0 0 / 0.6)";
-	context.fillRect(0, 0.42 * height, width, 0.16 * height);
-	message({ pen, ...shown });
-}
-
 export function hud(view: Hud) {
 	const { pen, flash } = view;
 	pen.context.globalAlpha = FLASH * flash;
@@ -88,5 +79,4 @@ export function hud(view: Hud) {
 	score(view);
 	lives(view);
 	footer(view);
-	banner(view);
 }

@@ -37,7 +37,11 @@ const end = (bpm: number) =>
 
 describe("track tempo", () => {
 	it("rides a faster song faster", () => {
-		expect(end(150) / end(100)).toBeCloseTo(1.5, 2);
+		expect(end(150) / end(120)).toBeCloseTo(1.25, 2);
+	});
+
+	it("keeps slow songs at the base pace", () => {
+		expect(end(80)).toBeCloseTo(end(120), 2);
 	});
 
 	it("caps how far tempo stretches the pace", () => {

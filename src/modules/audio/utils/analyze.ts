@@ -1,5 +1,6 @@
 import { beats } from "./beats";
 import { envelope } from "./envelope";
+import { fill } from "./fill";
 import { flux } from "./flux";
 import { frames, HOP } from "./frames";
 import { intensity } from "./intensity";
@@ -14,8 +15,11 @@ import { tempo } from "./tempo";
 
 export type Analysis = {
 	envelope: Float32Array;
+	// Detected onsets only (the debug graph shows these).
 	onsets: number[];
-	// Spectral flux at each onset: how hard it hit.
+	// What the game turns into hits: onsets plus empty beats; strengths and lanes follow these.
+	marks: number[];
+	// Spectral flux at each mark: how hard it hit.
 	strengths: number[];
 	lanes: Lane[];
 	ridges: Float32Array;
@@ -38,15 +42,19 @@ export function analyze(samples: Float32Array): Analysis {
 	const onsets = peaks(rises);
 	const loudness = smooth({ values: envelope(hops), factor: SMOOTHING });
 	const bpm = tempo(rises);
+	const grid = beats({ flux: rises, bpm });
+	const full = intensity({ spectra, loudness });
+	const marks = fill({ onsets, beats: grid, bpm, intensity: full });
 	return {
 		envelope: loudness,
 		onsets,
-		strengths: onsets.map((onset) => rises[onset] ?? 0),
-		lanes: lanes({ spectra, onsets }),
+		marks,
+		strengths: marks.map((mark) => rises[mark] ?? 0),
+		lanes: lanes({ spectra, onsets: marks }),
 		ridges: ridges(spectra),
 		kicks: kicks(spectra),
-		intensity: intensity({ spectra, loudness }),
+		intensity: full,
 		bpm,
-		beats: beats({ flux: rises, bpm }),
+		beats: grid,
 	};
 }

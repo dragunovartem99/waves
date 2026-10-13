@@ -12,7 +12,6 @@ type Frame = { pen: Pen; song: Song; run: Run; now: number };
 const RIPPLE = 9;
 // Seconds the red flash takes to fade after a crash.
 const FLASH = 0.4;
-const AGAIN = "click to ride again · drop another song";
 
 // One frame of a ride: the field, then the HUD over it.
 export function show({ pen, song, run, now }: Frame) {
@@ -22,10 +21,8 @@ export function show({ pen, song, run, now }: Frame) {
 	const [pickups, blocks] = [song.pickups.slice(score.next), song.blocks.slice(health.next)];
 	const kick = kicks[Math.round(at)] ?? 0;
 	scene({ pen, ridges, track, grid, kick, phase: now * RIPPLE, pickups, blocks, at, u });
-	const text = health.lives === 0 ? "GAME OVER" : "CLEAR";
-	const banner = ended ? { text, note: AGAIN } : undefined;
 	// The loop stops when the ride ends, so a flash there would freeze on screen.
 	const flash = ended ? 0 : Math.max(0, 1 - (now - crashed) / FLASH);
 	const { duration } = song.buffer;
-	hud({ pen, score, title, now, duration, hint: "← →", lives: health.lives, flash, banner });
+	hud({ pen, score, title, now, duration, hint: "← →", lives: health.lives, flash });
 }
