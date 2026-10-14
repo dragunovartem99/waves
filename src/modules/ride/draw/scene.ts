@@ -33,23 +33,27 @@ function slice({ ridges, frame }: { ridges: Float32Array; frame: number }) {
 	return f < 0 ? new Float32Array(0) : ridges.subarray(f * POINTS, (f + 1) * POINTS);
 }
 
+const visible = (items: Item[]) =>
+	items.filter(({ depth }) => depth > 0 && depth <= 1).toSorted((a, b) => b.depth - a.depth);
+
 // Ridges sit on the beat grid, so each one reaches the player in time with the music.
-function items({ track, grid, pickups, blocks, at }: Scene): Item[] {
+function lines({ track, grid, at }: Scene): Item[] {
 	const now = distance({ track, frame: at });
-	const lines = grid
-		.filter(({ distance: far }) => far > now && far <= now + SPAN)
-		.map(({ frame, beat, distance: far }) => ({ frame, beat, depth: (far - now) / SPAN }));
+	return visible(
+		grid.map(({ frame, beat, distance: far }) => ({ frame, beat, depth: (far - now) / SPAN }))
+	);
+}
+
+function marks({ track, pickups, blocks, at }: Scene): Item[] {
+	const now = distance({ track, frame: at });
 	const mark = ({ hit: { time, lane }, block }: { hit: Hit; block: boolean }) => {
 		const frame = (time * RATE) / HOP;
 		return { frame, lane, block, depth: (distance({ track, frame }) - now) / SPAN };
 	};
-	const marks = [
+	return visible([
 		...pickups.map((entry) => mark({ hit: entry, block: false })),
 		...blocks.map((entry) => mark({ hit: entry, block: true })),
-	];
-	return [...lines, ...marks]
-		.filter(({ depth }) => depth > 0 && depth <= 1)
-		.toSorted((a, b) => b.depth - a.depth);
+	]);
 }
 
 function paint({ view, item }: { view: Scene; item: Item }) {
@@ -62,18 +66,19 @@ function paint({ view, item }: { view: Scene; item: Item }) {
 	else hit({ line, lane, block });
 }
 
-// Painted far → near for occlusion, ending with the live front ridge (the spectrum right now)
-// that the player rides on.
+// Ridges are painted far → near for occlusion, ending with the live front ridge (the spectrum
+// right now) that the player rides on. Hits go over all of them: a nearer ridge must never hide one.
 export function scene(view: Scene) {
 	const { pen, ridges, at, u, kick, phase } = view;
 	pen.context.globalAlpha = 1;
 	pen.context.fillStyle = BACKDROP;
 	pen.context.fillRect(0, 0, pen.width, pen.height);
 	guides(pen);
-	items(view).forEach((item) => paint({ view, item }));
+	lines(view).forEach((item) => paint({ view, item }));
 	pen.context.globalAlpha = 1;
 	const front = { pen, depth: 0, values: slice({ ridges, frame: at }), kick, phase };
-	if (front.values.length < POINTS) return;
-	ridge(front);
-	player({ line: front, u });
+	if (front.values.length >= POINTS) ridge(front);
+	marks(view).forEach((item) => paint({ view, item }));
+	pen.context.globalAlpha = 1;
+	if (front.values.length >= POINTS) player({ line: front, u });
 }

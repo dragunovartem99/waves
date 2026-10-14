@@ -82,3 +82,19 @@ describe("hits fairness", () => {
 		expect(new Set(blocks.map(({ lane }) => lane)).size).toBeLessThan(3);
 	});
 });
+
+describe("hits lanes", () => {
+	// Bass hits twice as hard as anything in the highs, every second, both lanes taking turns.
+	const twice = Array.from({ length: 40 }, (_, i) => Math.round((3 + i / 2) * PER_SECOND));
+	const split = {
+		onsets: twice,
+		lanes: twice.map((_, i) => (i % 2 ? 2 : 0) as 0 | 2),
+		strengths: twice.map((_, i) => (i % 2 ? (i % 5) + 1 : 10 + (i % 5))),
+		intensity: new Float32Array(30 * PER_SECOND).fill(0),
+	};
+
+	it("gives blocks to a quieter lane too, not just the loudest", () => {
+		const { blocks } = hits(split);
+		expect(new Set(blocks.map(({ lane }) => lane))).toEqual(new Set([0, 2]));
+	});
+});
