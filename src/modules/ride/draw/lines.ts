@@ -60,7 +60,7 @@ export function hit({ line, lane, block }: { line: Line; lane: Hit["lane"]; bloc
 	const from = Math.round((u - SEGMENT) * (POINTS - 1));
 	const to = Math.round((u + SEGMENT) * (POINTS - 1));
 	trace({ context: pen.context, dots: dots(line).slice(from, to + 1) });
-	const weight = block ? 9 : 5;
+	const weight = block ? 9 : 7;
 	pen.context.strokeStyle = block ? ACCENT : INK;
 	pen.context.lineWidth =
 		Math.max(2, weight * dot({ pen, depth, u, value: 0 }).scale) * unit(pen);

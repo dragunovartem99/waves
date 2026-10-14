@@ -2,6 +2,7 @@ import type { Lane } from "@/modules/audio";
 import { HOP, RATE } from "@/modules/audio";
 
 import type { Hit } from "./judge";
+import { reach } from "./reach";
 
 type Onsets = { onsets: number[]; lanes: Lane[]; strengths: number[]; intensity: Float32Array };
 
@@ -12,6 +13,7 @@ const WINDOW = Math.round((SPAN * RATE) / HOP);
 // Blocks per second from the sparsest parts to the fullest, whatever the song's hit density.
 const SPARSE = 0.4;
 const FULL = 2;
+const LANES = 3;
 // Never more than this share of hits, so dense parts still leave plenty to catch.
 const MOST = 0.6;
 // Seconds at the start with no blocks, so a ride never opens with a crash, and with nothing
@@ -20,13 +22,13 @@ const GRACE = 3;
 const QUIET = 2;
 // Seconds in which blocks must never cover all three lanes, so there's always a way through.
 const REACH = 0.35;
-
-// How many of its neighbours an onset hits harder than (0–1), and how many hits a second
-// are around it.
-function standing({ onsets, strengths, i }: { onsets: number[]; strengths: number[]; i: number }) {
-	const [frame = 0, strength = 0] = [onsets[i], strengths[i]];
+// How many of its neighbours in the same lane an onset hits harder than (0–1), and how many
+// hits a second that lane has around it. Ranked across all lanes, one band took most blocks
+// and left the other two lanes safe.
+function standing({ onsets, lanes, strengths, i }: Omit<Onsets, "intensity"> & { i: number }) {
+	const [frame = 0, strength = 0, lane] = [onsets[i], strengths[i], lanes[i]];
 	const near = onsets.flatMap((other, j) =>
-		Math.abs(other - frame) <= WINDOW ? [strengths[j] ?? 0] : []
+		lanes[j] === lane && Math.abs(other - frame) <= WINDOW ? [strengths[j] ?? 0] : []
 	);
 	return {
 		rank: near.filter((other) => other < strength).length / near.length,
@@ -47,9 +49,9 @@ function fair(marks: { hit: Hit; block: boolean }[]) {
 // Every onset becomes something in its band's lane: locally hard hits are blocks to dodge, the
 // rest pickups to catch. Fuller music gets more blocks a second, so choruses hit back.
 export function hits({ onsets, lanes, strengths, intensity }: Onsets) {
-	const rate = (onset: number) => SPARSE + (FULL - SPARSE) * (intensity[onset] ?? 0);
+	const rate = (onset: number) => (SPARSE + (FULL - SPARSE) * (intensity[onset] ?? 0)) / LANES;
 	const blocked = (onset: number, i: number) => {
-		const { rank, density } = standing({ onsets, strengths, i });
+		const { rank, density } = standing({ onsets, lanes, strengths, i });
 		return rank >= 1 - Math.min(MOST, rate(onset) / density);
 	};
 	const all = fair(
@@ -61,10 +63,9 @@ export function hits({ onsets, lanes, strengths, intensity }: Onsets) {
 			};
 		})
 	);
-	return {
-		pickups: all
-			.filter(({ hit, block }) => !block && hit.time >= QUIET)
-			.map(({ hit }): Hit => hit),
-		blocks: all.filter(({ block }) => block).map(({ hit }): Hit => hit),
-	};
+	const blocks = all.filter(({ block }) => block).map(({ hit }): Hit => hit);
+	const pickups = all
+		.filter(({ hit, block }) => !block && hit.time >= QUIET)
+		.map(({ hit }): Hit => hit);
+	return { pickups: reach({ pickups, blocks }), blocks };
 }
