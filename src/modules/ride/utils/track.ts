@@ -1,33 +1,24 @@
-type Song = { intensity: Float32Array; kicks: Float32Array; bpm?: number };
+type Song = { motion: Float32Array; kicks: Float32Array };
 type At = { track: Float32Array; frame: number };
 type Find = { track: Float32Array; distance: number };
 
-// Average distance per frame at 120 BPM; with the view SPAN deep, sets how far ahead you see.
-export const PACE = 1.4;
-// Faster songs ride faster overall, up to a limit so they don't blur. Slow songs keep the base
-// pace: riding them slower just made them drag.
-const TEMPO = 120;
-const TEMPO_RANGE = [1, 1.35] as const;
-// Speed range before scaling to PACE: sparse parts cruise, full ones (choruses, drops) rush.
-// The floor stays high: intensity is ranked, so every intro lands at the bottom however busy.
-const SLOW = 1.2;
-const FAST = 3;
-// Above 1 keeps middling sections calm, so the jump into a chorus stands out.
-const CURVE = 1.5;
-// Extra speed at a full kick, so each one shoves you forward.
-const JOLT = 1.5;
+// Average distance per frame; with the view SPAN deep, sets how far ahead you see.
+export const PACE = 1.9;
+// Least share of average speed: below it, hits a beat apart would land on top of each other.
+const LEAST = 0.33;
+// Share of average speed a full kick adds, the same everywhere: a leap from a calm crawl, a nudge
+// in a loud part.
+const JOLT = 0.25;
 
-const pace = (bpm: number) =>
-	PACE * Math.min(TEMPO_RANGE[1], Math.max(TEMPO_RANGE[0], bpm / TEMPO));
-
-// Distance travelled by the start of each frame, averaging PACE per frame (scaled by tempo).
-export function track({ intensity, kicks, bpm = TEMPO }: Song) {
-	const speeds = intensity.map(
-		(x, i) => SLOW + (FAST - SLOW) * x ** CURVE + JOLT * (kicks[i] ?? 0)
-	);
-	const mean = speeds.reduce((sum, speed) => sum + speed, 0) / (speeds.length || 1);
-	const out = new Float32Array(speeds.length + 1);
-	speeds.forEach((speed, i) => (out[i + 1] = (out[i] ?? 0) + (pace(bpm) * speed) / mean));
+// Distance travelled by the start of each frame. Speed follows how much the music moves: twice
+// the motion rides twice as fast, down to a crawl where little moves, and each kick shoves.
+export function track({ motion, kicks }: Song) {
+	const mean = motion.reduce((sum, value) => sum + value, 0) / (motion.length || 1);
+	const out = new Float32Array(motion.length + 1);
+	motion.forEach((value, i) => {
+		const speed = Math.max(LEAST, value / (mean || 1)) + JOLT * (kicks[i] ?? 0);
+		out[i + 1] = (out[i] ?? 0) + PACE * speed;
+	});
 	return out;
 }
 

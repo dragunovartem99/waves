@@ -9,3 +9,7 @@ export function smooth({ values, factor }: Params) {
 	});
 	return out;
 }
+
+// Smoothed forward and back, so a change lands where it happens instead of lagging behind.
+export const settle = ({ values, factor }: Params) =>
+	smooth({ values: smooth({ values, factor }).toReversed(), factor }).toReversed();

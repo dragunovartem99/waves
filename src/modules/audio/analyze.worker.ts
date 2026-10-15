@@ -8,6 +8,7 @@ self.addEventListener("message", (event: MessageEvent<Float32Array>) => {
 			analysis.ridges.buffer,
 			analysis.kicks.buffer,
 			analysis.intensity.buffer,
+			analysis.motion.buffer,
 		],
 	});
 });
