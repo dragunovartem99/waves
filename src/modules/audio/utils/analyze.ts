@@ -7,6 +7,7 @@ import { intensity } from "./intensity";
 import { kicks } from "./kicks";
 import type { Lane } from "./lanes";
 import { lanes } from "./lanes";
+import { motion } from "./motion";
 import { peaks } from "./peaks";
 import { ridges } from "./ridges";
 import { smooth } from "./smooth";
@@ -27,6 +28,8 @@ export type Analysis = {
 	kicks: Float32Array;
 	// How full the music is per frame, 0–1 within the song.
 	intensity: Float32Array;
+	// How much the ridges move per frame, smoothed: what the ride's speed follows.
+	motion: Float32Array;
 	bpm: number;
 	// Beat frames, tracked so they follow small tempo drifts.
 	beats: number[];
@@ -43,17 +46,20 @@ export function analyze(samples: Float32Array): Analysis {
 	const loudness = smooth({ values: envelope(hops), factor: SMOOTHING });
 	const bpm = tempo(rises);
 	const grid = beats({ flux: rises, bpm });
-	const full = intensity({ spectra, loudness });
-	const marks = fill({ onsets, beats: grid, bpm, intensity: full });
+	const full = intensity(spectra);
+	const lines = ridges(spectra);
+	const moving = motion(lines);
+	const marks = fill({ onsets, beats: grid, bpm, intensity: full, motion: moving });
 	return {
 		envelope: loudness,
 		onsets,
 		marks,
 		strengths: marks.map((mark) => rises[mark] ?? 0),
 		lanes: lanes({ spectra, onsets: marks }),
-		ridges: ridges(spectra),
+		ridges: lines,
 		kicks: kicks(spectra),
 		intensity: full,
+		motion: moving,
 		bpm,
 		beats: grid,
 	};
