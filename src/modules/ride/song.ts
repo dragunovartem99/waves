@@ -4,6 +4,7 @@ import type { Ridge } from "./utils/grid";
 import { grid } from "./utils/grid";
 import { hits } from "./utils/hits";
 import type { Hit } from "./utils/judge";
+import { speeds } from "./utils/speed";
 import { track } from "./utils/track";
 
 export type Song = {
@@ -27,16 +28,16 @@ const title = (name: string) =>
 
 // Everything a ride needs, built once per song from its analysis.
 export function prepare({ analysis, buffer, name }: Source): Song {
-	const { ridges, kicks, beats } = analysis;
-	const path = track(analysis);
-	const marks = hits({ ...analysis, onsets: analysis.marks });
+	const { ridges, kicks, beats, intensity } = analysis;
+	const speed = speeds(intensity);
+	const path = track(speed);
 	return {
 		buffer,
 		ridges,
 		kicks,
 		track: path,
 		grid: grid({ beats, track: path }),
-		...marks,
+		...hits(speed),
 		title: title(name),
 	};
 }

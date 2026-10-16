@@ -1,7 +1,9 @@
 // `kick` 0–1 is the current kick punch; `phase` (radians) moves its ripple along.
 type Point = { depth: number; u: number; value: number; kick?: number; phase?: number };
 
-// Where each lane sits across a ridge: bass, mids, highs.
+export type Lane = 0 | 1 | 2;
+
+// Where each lane sits across a ridge: left, middle, right.
 export const LANES = [0.3, 0.5, 0.7] as const;
 
 // Fractions of the canvas, taken from the 1600×1000 mockup.

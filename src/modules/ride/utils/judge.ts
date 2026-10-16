@@ -1,4 +1,4 @@
-import type { Lane } from "@/modules/audio";
+import type { Lane } from "./project";
 
 export type Hit = { time: number; lane: Lane };
 export type Score = { next: number; score: number; streak: number };

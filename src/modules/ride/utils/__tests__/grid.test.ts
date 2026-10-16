@@ -5,8 +5,7 @@ import { track } from "../track";
 
 const LENGTH = 400;
 const beats = Array.from({ length: 10 }, (_, i) => 20 + i * 36);
-const ride = (level: number) =>
-	track({ motion: new Float32Array(LENGTH).fill(level), kicks: new Float32Array(LENGTH) });
+const ride = (level: number) => track(new Float32Array(LENGTH).fill(level));
 
 describe("grid", () => {
 	it("puts a ridge on every beat", () => {
