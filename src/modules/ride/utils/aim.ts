@@ -1,7 +1,6 @@
-import type { Lane } from "@/modules/audio";
-
 import type { Run } from "./advance";
 import type { Hit } from "./judge";
+import type { Lane } from "./project";
 
 type Sight = { run: Run; pickups: Hit[]; blocks: Hit[]; now: number };
 

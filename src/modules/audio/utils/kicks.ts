@@ -1,8 +1,9 @@
 import { energy } from "./energy";
-import { BASS } from "./lanes";
 import { rise } from "./rise";
 import { scale } from "./scale";
 
+// FFT bins at HOP 1024 and 44.1 kHz (~43 Hz each) where kicks live.
+const BASS = { from: 1, to: 6 };
 // Bass rises below this many typical rises are groove, not kicks; KICK more reaches full punch.
 const FLOOR = 1.5;
 const KICK = 5;

@@ -1,71 +1,67 @@
-import type { Lane } from "@/modules/audio";
 import { HOP, RATE } from "@/modules/audio";
 
 import type { Hit } from "./judge";
-import { reach } from "./reach";
+import { maxima } from "./maxima";
+import type { Lane } from "./project";
+import { random } from "./random";
+import { rings } from "./rings";
+import type { Swell } from "./swells";
+import { swells } from "./swells";
+import { tilts } from "./tilt";
 
-type Onsets = { onsets: number[]; lanes: Lane[]; strengths: number[]; intensity: Float32Array };
+type Spot = Swell & { lane: Lane; block: boolean };
 
-// Hits are judged against their neighbours this many seconds either side, not the whole song:
-// dense parts smear transients, so globally they'd never rank as hard.
-const SPAN = 4;
-const WINDOW = Math.round((SPAN * RATE) / HOP);
-// Blocks per second from the sparsest parts to the fullest, whatever the song's hit density.
-const SPARSE = 0.4;
-const FULL = 2;
-const LANES = 3;
-// Never more than this share of hits, so dense parts still leave plenty to catch.
-const MOST = 0.6;
-// Seconds at the start with no blocks, so a ride never opens with a crash, and with nothing
-// at all, so it opens on the music.
-const GRACE = 3;
-const QUIET = 2;
-// Seconds in which blocks must never cover all three lanes, so there's always a way through.
-const REACH = 0.35;
-// How many of its neighbours in the same lane an onset hits harder than (0–1), and how many
-// hits a second that lane has around it. Ranked across all lanes, one band took most blocks
-// and left the other two lanes safe.
-function standing({ onsets, lanes, strengths, i }: Omit<Onsets, "intensity"> & { i: number }) {
-	const [frame = 0, strength = 0, lane] = [onsets[i], strengths[i], lanes[i]];
-	const near = onsets.flatMap((other, j) =>
-		lanes[j] === lane && Math.abs(other - frame) <= WINDOW ? [strengths[j] ?? 0] : []
+// Share of hits that are blocks to dodge, weakest first: 0.55 casual, 0.75 hard.
+export const BLOCKS = 0.55;
+const LANES = [0, 1, 2] as const;
+// Rings within which a hit joins the chain it follows, and rings a block keeps from the last hit.
+const CHAIN = 5;
+const SPACING = 11;
+
+const seconds = (frame: number) => (frame * HOP) / RATE;
+
+// The weakest BLOCKS share of swells become blocks, the rest pickups; lanes are random but the
+// same on every ride of a song.
+function split({ found, seed }: { found: Swell[]; seed: number }): Spot[] {
+	const order = [...found.keys()].toSorted(
+		(a, b) => (found[a]?.strength ?? 0) - (found[b]?.strength ?? 0)
 	);
-	return {
-		rank: near.filter((other) => other < strength).length / near.length,
-		density: near.length / (2 * SPAN),
-	};
+	const weak = new Set(order.slice(0, Math.floor(BLOCKS * found.length)));
+	const next = random(seed);
+	return found.map((swell, i) => ({
+		...swell,
+		lane: LANES[Math.floor(next() * LANES.length)] ?? 1,
+		block: weak.has(i),
+	}));
 }
 
-// Turns a block back into a pickup when the blocks just before it already cover the other two
-// lanes: a wall the player could only dodge by reflex.
-function fair(marks: { hit: Hit; block: boolean }[]) {
-	return marks.reduce<{ hit: Hit; block: boolean }[]>((kept, mark) => {
-		const recent = kept.filter(({ hit, block }) => block && mark.hit.time - hit.time < REACH);
-		const lanes = new Set([...recent.map(({ hit }) => hit.lane), mark.hit.lane]);
-		return kept.concat(mark.block && lanes.size === 3 ? { ...mark, block: false } : mark);
+// A hit right after a chain's first takes its kind and lane, so close hits string together.
+function chain(spots: Spot[]) {
+	let head: Spot | undefined;
+	return spots.map((spot) => {
+		if (head && spot.ring - head.ring < CHAIN)
+			return { ...spot, lane: head.lane, block: head.block };
+		head = spot;
+		return spot;
+	});
+}
+
+// Drops a block too soon after the last hit kept, so blocks never crowd.
+const thin = (spots: Spot[]) =>
+	spots.reduce<Spot[]>((kept, spot) => {
+		const last = kept.at(-1);
+		return spot.block && last && spot.ring - last.ring < SPACING ? kept : kept.concat(spot);
 	}, []);
-}
 
-// Every onset becomes something in its band's lane: locally hard hits are blocks to dodge, the
-// rest pickups to catch. Fuller music gets more blocks a second, so choruses hit back.
-export function hits({ onsets, lanes, strengths, intensity }: Onsets) {
-	const rate = (onset: number) => (SPARSE + (FULL - SPARSE) * (intensity[onset] ?? 0)) / LANES;
-	const blocked = (onset: number, i: number) => {
-		const { rank, density } = standing({ onsets, lanes, strengths, i });
-		return rank >= 1 - Math.min(MOST, rate(onset) / density);
+// A hit on each swell of the music, the strongest pickups to catch and the rest blocks to dodge,
+// at the time the ride reaches its ring.
+export function hits(speeds: Float32Array) {
+	const laid = rings(speeds);
+	const found = swells(maxima(tilts(laid)));
+	const spots = thin(chain(split({ found, seed: speeds.length })));
+	const hit = ({ ring, lane }: Spot): Hit => ({ time: seconds(laid[ring]?.frame ?? 0), lane });
+	return {
+		pickups: spots.filter(({ block }) => !block).map((spot) => hit(spot)),
+		blocks: spots.filter(({ block }) => block).map((spot) => hit(spot)),
 	};
-	const all = fair(
-		onsets.map((onset, i) => {
-			const time = (onset * HOP) / RATE;
-			return {
-				hit: { time, lane: lanes[i] ?? 1 },
-				block: time >= GRACE && blocked(onset, i),
-			};
-		})
-	);
-	const blocks = all.filter(({ block }) => block).map(({ hit }): Hit => hit);
-	const pickups = all
-		.filter(({ hit, block }) => !block && hit.time >= QUIET)
-		.map(({ hit }): Hit => hit);
-	return { pickups: reach({ pickups, blocks }), blocks };
 }

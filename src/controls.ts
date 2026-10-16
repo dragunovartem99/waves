@@ -1,4 +1,4 @@
-import type { Lane } from "@/modules/audio";
+import type { Lane } from "@/modules/ride";
 
 type Move = Record<Lane, Lane>;
 type Controls = {

@@ -1,6 +1,6 @@
-import type { Lane, Playback } from "@/modules/audio";
+import type { Playback } from "@/modules/audio";
 import { analyzeOffThread, decode, play, RATE, samples } from "@/modules/audio";
-import type { Run, Song } from "@/modules/ride";
+import type { Lane, Run, Song } from "@/modules/ride";
 import { advance, aim, fit, FRESH, loadFonts, prepare, show } from "@/modules/ride";
 
 import { controls } from "./controls";

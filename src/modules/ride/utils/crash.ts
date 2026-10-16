@@ -1,6 +1,5 @@
-import type { Lane } from "@/modules/audio";
-
 import type { Hit } from "./judge";
+import type { Lane } from "./project";
 
 export type Health = { next: number; lives: number };
 type Turn = { blocks: Hit[]; state: Health; now: number; lane: Lane };

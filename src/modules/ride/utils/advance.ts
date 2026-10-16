@@ -1,9 +1,8 @@
-import type { Lane } from "@/modules/audio";
-
 import type { Health } from "./crash";
 import { crash, HEALTHY } from "./crash";
 import type { Hit, Score } from "./judge";
 import { judge, START } from "./judge";
+import type { Lane } from "./project";
 import { LANES } from "./project";
 
 // One ride's state; `u` is the dot's eased position, `crashed` the time of the last crash.
