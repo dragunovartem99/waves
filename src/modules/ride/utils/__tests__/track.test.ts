@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { distance, frameAt, PACE, track } from "../track";
+import { distance, frameAt, JOLT, PACE, track } from "../track";
 
 const LENGTH = 400;
 // Calm verse, loud chorus.
 const swell = Float32Array.from({ length: LENGTH }, (_, i) => (i < LENGTH / 2 ? 0.2 : 1));
-const line = track(swell);
+const calm = new Float32Array(LENGTH);
+const line = track({ speeds: swell, kicks: calm });
 const at = (frame: number) => distance({ track: line, frame });
 const step = (frame: number) => at(frame + 1) - at(frame);
 
@@ -16,6 +17,14 @@ describe("track", () => {
 
 	it("rides in proportion to speed", () => {
 		expect(step(100) / step(300)).toBeCloseTo(0.2, 5);
+	});
+
+	it("surges on a kick", () => {
+		const kicks = Float32Array.from({ length: LENGTH }, (_, i) => Number(i === 100));
+		const kicked = track({ speeds: swell, kicks });
+		const jump =
+			distance({ track: kicked, frame: 101 }) - distance({ track: kicked, frame: 100 });
+		expect(jump).toBeCloseTo(PACE * (0.2 + JOLT), 5);
 	});
 });
 
