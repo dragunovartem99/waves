@@ -29,21 +29,4 @@ describe("project", () => {
 	it("keeps the horizon on screen", () => {
 		expect(project({ depth: 1, u: 0.5, value: 1 }).y).toBeGreaterThan(0);
 	});
-
-	it("grows ridges on a kick", () => {
-		const calm = project({ depth: 0, u: 0.5, value: 1 });
-		const kicked = project({ depth: 0, u: 0.5, value: 1, kick: 1 });
-		expect(kicked.y).toBeLessThan(calm.y - 0.03);
-	});
-
-	it("ripples even a flat ridge on a kick", () => {
-		const heights = [0.1, 0.2, 0.3].map((u) => project({ depth: 0, u, value: 0, kick: 1 }).y);
-		expect(new Set(heights).size).toBe(3);
-	});
-
-	it("keeps x steady on a kick", () => {
-		expect(project({ depth: 0.5, u: 0.2, value: 1, kick: 1 }).x).toBe(
-			project({ depth: 0.5, u: 0.2, value: 1 }).x
-		);
-	});
 });

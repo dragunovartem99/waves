@@ -4,13 +4,12 @@ import type { Ridge } from "./utils/grid";
 import { grid } from "./utils/grid";
 import { hits } from "./utils/hits";
 import type { Hit } from "./utils/judge";
-import { speeds } from "./utils/speed";
+import { rides, speeds } from "./utils/speed";
 import { track } from "./utils/track";
 
 export type Song = {
 	buffer: AudioBuffer;
 	ridges: Float32Array;
-	kicks: Float32Array;
 	track: Float32Array;
 	grid: Ridge[];
 	pickups: Hit[];
@@ -30,11 +29,11 @@ const title = (name: string) =>
 export function prepare({ analysis, buffer, name }: Source): Song {
 	const { ridges, kicks, beats, intensity } = analysis;
 	const speed = speeds(intensity);
-	const path = track(speed);
+	// Hits keep Audiosurf's speed; the ride reaches full speed in every song's loudest parts.
+	const path = track({ speeds: rides(intensity), kicks });
 	return {
 		buffer,
 		ridges,
-		kicks,
 		track: path,
 		grid: grid({ beats, track: path }),
 		...hits(speed),

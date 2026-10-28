@@ -1,14 +1,18 @@
+type Ride = { speeds: Float32Array; kicks: Float32Array };
 type At = { track: Float32Array; frame: number };
 type Find = { track: Float32Array; distance: number };
 
 // Distance per frame at full speed; with the view SPAN deep, sets how far ahead you see.
 export const PACE = 3;
+// Share of full speed a full kick adds on top: a leap from a calm crawl, a push past flat out.
+export const JOLT = 0.5;
 
-// Distance travelled by the start of each frame, from each frame's share of full speed.
-export function track(speeds: Float32Array) {
+// Distance travelled by the start of each frame, from each frame's share of full speed plus a
+// surge on each kick. Hits are timed by frame, so the surge moves the view, not where hits fall.
+export function track({ speeds, kicks }: Ride) {
 	const out = new Float32Array(speeds.length + 1);
 	speeds.forEach((speed, i) => {
-		out[i + 1] = (out[i] ?? 0) + PACE * speed;
+		out[i + 1] = (out[i] ?? 0) + PACE * (speed + JOLT * (kicks[i] ?? 0));
 	});
 	return out;
 }
