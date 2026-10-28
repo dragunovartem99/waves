@@ -27,12 +27,12 @@ input[type="file"] {
 	display: grid;
 	place-content: center;
 	justify-items: center;
-	gap: 14px;
+	gap: 32px;
 	padding: 16px;
 	background: radial-gradient(rgb(0 0 0 / 0.95) 20%, rgb(0 0 0 / 0.75));
 	font:
-		400 14px/1.4 "JetBrains Mono",
-		monospace;
+		500 14px/1.4 "Azeret Mono",
+		sans-serif;
 	color: #f1efe9;
 	text-align: center;
 }
@@ -43,14 +43,21 @@ input[type="file"] {
 	display: none;
 }
 
-#menu p {
+#menu :where(p) {
 	margin: 0;
+}
+
+/* An empty note would still take a grid row and double the gap. */
+#menu-note:empty {
+	display: none;
 }
 
 #menu-title {
 	font:
-		400 clamp(40px, 8vw, 96px) / 1 Monoton,
+		400 clamp(40px, 7vw, 80px) / 1 Monoton,
 		sans-serif;
+	/* Monoton keeps descender room under its caps; this evens the gap below. */
+	margin-bottom: -0.12em;
 }
 
 /* A ruler of accuracy, 10 px per percent, sliding under a fixed red pointer like a scale:
@@ -58,13 +65,12 @@ input[type="file"] {
 #menu-rank {
 	--percent: 10px;
 	--base: 26px;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 4px;
+	display: grid;
+	gap: 20px;
+	width: min(420px, 80vw);
 	font:
-		400 13px "JetBrains Mono",
-		monospace;
+		500 13px "Azeret Mono",
+		sans-serif;
 	color: #8a8883;
 }
 
@@ -72,9 +78,32 @@ input[type="file"] {
 	display: none;
 }
 
+/* Score on the left, accuracy on the right, in the HUD's heavy numerals. */
+#menu-rank .stats {
+	display: flex;
+	justify-content: space-between;
+	margin: 0;
+	text-align: left;
+}
+
+#menu-rank .stats div:last-child {
+	text-align: right;
+}
+
+#menu-rank dt {
+	font-size: 11px;
+}
+
+#menu-rank dd {
+	margin: 6px 0 0;
+	font:
+		800 40px/1 "Azeret Mono",
+		sans-serif;
+	color: #f1efe9;
+}
+
 #menu-rank .window {
 	position: relative;
-	width: min(360px, 80vw);
 	height: 64px;
 	overflow: hidden;
 	mask-image: linear-gradient(to right, transparent, #000 30%, #000 70%, transparent);
@@ -108,7 +137,8 @@ input[type="file"] {
 	left: 50%;
 	top: 0;
 	bottom: 0;
-	width: calc(100 * var(--percent) + 1px);
+	/* Runs past SS so a high score doesn't leave the window's right half empty. */
+	width: calc(120 * var(--percent) + 1px);
 	background:
 		linear-gradient(#3a3a3a, #3a3a3a) left 0 bottom var(--base) / 100% 1px no-repeat,
 		repeating-linear-gradient(
@@ -129,9 +159,9 @@ input[type="file"] {
 	bottom: 4px;
 	transform: translateX(-50%);
 	font:
-		700 14px/18px "JetBrains Mono",
-		monospace;
-	color: #8a8883;
+		500 12px/18px "Azeret Mono",
+		sans-serif;
+	color: #5a5854;
 }
 
 #menu-rank .scale span::before {
@@ -150,9 +180,6 @@ input[type="file"] {
 
 /* Laid out from the start but invisible until the ruler settles, so nothing shifts. */
 #menu-rank .reading {
-	font-variant-numeric: tabular-nums;
-	letter-spacing: 0.1em;
-	color: #f1efe9;
 	opacity: 0;
 	transition: opacity 200ms;
 }
@@ -161,46 +188,46 @@ input[type="file"] {
 	opacity: 1;
 }
 
-#menu-note,
-#menu .keys {
+#menu-note {
+	max-width: 44ch;
+	text-wrap: balance;
+	font-size: 13px;
 	color: #8a8883;
 }
 
 #menu .keys {
-	font-size: 12px;
-	margin-top: 8px;
+	font-size: 11px;
+	color: #5a5854;
 }
 
 #menu-actions {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: center;
-	gap: 8px 28px;
-	margin-top: 10px;
+	gap: 12px;
 }
 
 #menu button {
 	font:
-		700 14px "JetBrains Mono",
-		monospace;
-	letter-spacing: 0.08em;
+		500 13px "Azeret Mono",
+		sans-serif;
 	text-transform: uppercase;
-	color: #8a8883;
+	color: #c8c6c0;
 	background: none;
-	border: 0;
-	padding: 6px 0;
+	border: 1px solid #3a3a3a;
+	padding: 12px 22px;
 	cursor: pointer;
 }
 
 #menu button:first-child {
-	color: #ff3b1f;
+	color: #f1efe9;
+	border-color: #f1efe9;
 }
 
 #menu button:is(:hover, :focus-visible) {
-	color: #f1efe9;
+	color: #ff3b1f;
+	border-color: #ff3b1f;
 	outline: none;
-	text-decoration: underline;
-	text-underline-offset: 6px;
 }
 
 /* Two bars drawn in CSS: a text "II" looked like a stray glyph. Starts the footer: centred

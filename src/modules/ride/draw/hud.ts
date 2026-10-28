@@ -1,7 +1,7 @@
 import { LIVES } from "../utils/crash";
 import type { Score } from "../utils/judge";
 import type { Pen } from "./canvas";
-import { ACCENT, DIM, INK } from "./canvas";
+import { ACCENT, INK } from "./canvas";
 import { clock, MARGIN, mono } from "./text";
 
 export type Hud = {
@@ -26,7 +26,7 @@ const SLOT = 40;
 function score({ pen, score: { score: points, streak } }: Hud) {
 	const { context, width, height } = pen;
 	mono({ pen, text: "SCORE", x: MARGIN, y: 0.056 });
-	context.font = `900 ${SCORE * height}px Archivo`;
+	context.font = `800 ${SCORE * height}px 'Azeret Mono'`;
 	context.fillStyle = INK;
 	context.textAlign = "left";
 	context.fillText(
@@ -35,14 +35,17 @@ function score({ pen, score: { score: points, streak } }: Hud) {
 		(0.056 + SCORE * 0.88) * height
 	);
 	mono({ pen, text: "STREAK", x: MARGIN, y: 0.09 + SCORE });
-	mono({ pen, text: `×${streak}`, x: MARGIN + 0.05, y: 0.09 + SCORE, color: ACCENT, bold: true });
+	// Measured in the label's font, which `mono` just set: the count follows one space after.
+	const after = MARGIN + context.measureText("STREAK ").width / width;
+	mono({ pen, text: `×${streak}`, x: after, y: 0.09 + SCORE, color: ACCENT, bold: true });
 }
 
 function footer({ pen, title, now, duration }: Hud) {
 	const { context, width, height } = pen;
 	const start = MARGIN + (SLOT * devicePixelRatio) / width;
-	mono({ pen, text: title, x: start, y: 0.952 });
-	mono({ pen, text: `${clock(now)} / ${clock(duration)}`, x: 1 - MARGIN, y: 0.952 });
+	mono({ pen, text: title, x: start, y: 0.952, color: INK });
+	const time = `${clock(now)} / ${clock(duration)}`;
+	mono({ pen, text: time, x: 1 - MARGIN, y: 0.952, color: INK, tight: true });
 	const [left, full] = [start * width, (1 - MARGIN - start) * width];
 	context.fillStyle = "#333";
 	context.fillRect(left, 0.97 * height, full, Math.max(1, height / 1000));
@@ -57,7 +60,7 @@ function footer({ pen, title, now, duration }: Hud) {
 
 function lives({ pen, lives: left }: Hud) {
 	const { context, width, height } = pen;
-	mono({ pen, text: "LIVES", x: 1 - MARGIN - 0.07, y: 0.056, color: DIM });
+	mono({ pen, text: "LIVES", x: 1 - MARGIN - 0.07, y: 0.056 });
 	Array.from({ length: LIVES }, (_, i) => {
 		context.beginPath();
 		context.arc(
