@@ -10,6 +10,7 @@ import { track } from "./utils/track";
 export type Song = {
 	buffer: AudioBuffer;
 	ridges: Float32Array;
+	kicks: Float32Array;
 	track: Float32Array;
 	grid: Ridge[];
 	pickups: Hit[];
@@ -34,6 +35,7 @@ export function prepare({ analysis, buffer, name }: Source): Song {
 	return {
 		buffer,
 		ridges,
+		kicks,
 		track: path,
 		grid: grid({ beats, track: path }),
 		...hits(speed),
