@@ -53,6 +53,114 @@ input[type="file"] {
 		sans-serif;
 }
 
+/* A ruler of accuracy, 10 px per percent, sliding under a fixed red pointer like a scale:
+   ticks rise from a baseline, each rank a tall tick with its letter below. */
+#menu-rank {
+	--percent: 10px;
+	--base: 26px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	font:
+		400 13px "JetBrains Mono",
+		monospace;
+	color: #8a8883;
+}
+
+#menu-rank[hidden] {
+	display: none;
+}
+
+#menu-rank .window {
+	position: relative;
+	width: min(360px, 80vw);
+	height: 64px;
+	overflow: hidden;
+	mask-image: linear-gradient(to right, transparent, #000 30%, #000 70%, transparent);
+}
+
+/* The pointer: a notch on top and a line down to the baseline. */
+#menu-rank .window::before,
+#menu-rank .window::after {
+	content: "";
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 1;
+}
+
+#menu-rank .window::before {
+	top: 0;
+	border: 5px solid transparent;
+	border-top: 7px solid #ff3b1f;
+}
+
+#menu-rank .window::after {
+	top: 6px;
+	bottom: var(--base);
+	width: 2px;
+	background: #ff3b1f;
+}
+
+#menu-rank .scale {
+	position: absolute;
+	left: 50%;
+	top: 0;
+	bottom: 0;
+	width: calc(100 * var(--percent) + 1px);
+	background:
+		linear-gradient(#3a3a3a, #3a3a3a) left 0 bottom var(--base) / 100% 1px no-repeat,
+		repeating-linear-gradient(
+				to right,
+				#8a8883 0 1px,
+				transparent 1px calc(10 * var(--percent))
+			)
+			left 0 bottom var(--base) / 100% 16px no-repeat,
+		repeating-linear-gradient(to right, #5a5a58 0 1px, transparent 1px calc(5 * var(--percent)))
+			left 0 bottom var(--base) / 100% 10px no-repeat,
+		repeating-linear-gradient(to right, #3a3a3a 0 1px, transparent 1px var(--percent)) left 0
+			bottom var(--base) / 100% 5px no-repeat;
+	transition: transform 1.6s cubic-bezier(0.15, 0.85, 0.3, 1.03);
+}
+
+#menu-rank .scale span {
+	position: absolute;
+	bottom: 4px;
+	transform: translateX(-50%);
+	font:
+		700 14px/18px "JetBrains Mono",
+		monospace;
+	color: #8a8883;
+}
+
+#menu-rank .scale span::before {
+	content: "";
+	position: absolute;
+	left: 50%;
+	bottom: calc(100% + 4px);
+	width: 1px;
+	height: 28px;
+	background: currentColor;
+}
+
+#menu-rank .scale span.reached {
+	color: #ff3b1f;
+}
+
+/* Laid out from the start but invisible until the ruler settles, so nothing shifts. */
+#menu-rank .reading {
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 0.1em;
+	color: #f1efe9;
+	opacity: 0;
+	transition: opacity 200ms;
+}
+
+#menu-rank .reading.shown {
+	opacity: 1;
+}
+
 #menu-note,
 #menu .keys {
 	color: #8a8883;
