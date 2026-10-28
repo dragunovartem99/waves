@@ -5,14 +5,17 @@ import { LANES, project } from "../utils/project";
 import type { Dot, Pen } from "./canvas";
 import { ACCENT, BACKDROP, GUIDE, INK, trace } from "./canvas";
 
+// `kick` and `phase` are shared by every line in a frame: the whole field wobbles together.
 // `beat` marks a ridge on the beat; the ones between are dimmer and thinner.
 export type Line = {
 	pen: Pen;
 	depth: number;
 	values: Float32Array;
+	kick: number;
+	phase: number;
 	beat?: boolean;
 };
-type At = { pen: Pen; depth: number; u: number; value: number };
+type At = { pen: Pen; depth: number; u: number; value: number; kick?: number; phase?: number };
 
 const SEGMENT = 0.07;
 const SKIRT = 0.06;
@@ -77,9 +80,9 @@ export function guides(pen: Pen) {
 }
 
 export function player({ line, u }: { line: Line; u: number }) {
-	const { pen, values } = line;
+	const { pen, values, kick, phase } = line;
 	const value = values[Math.round(u * (POINTS - 1))] ?? 0;
-	const { x, y } = dot({ pen, depth: 0, u, value });
+	const { x, y } = dot({ pen, depth: 0, u, value, kick, phase });
 	// White with a red ring, so red on the field always means a block.
 	pen.context.beginPath();
 	pen.context.arc(x, y, 10 * unit(pen), 0, 2 * Math.PI);
