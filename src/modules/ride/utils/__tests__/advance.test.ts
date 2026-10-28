@@ -13,13 +13,14 @@ describe("advance", () => {
 			next: 1,
 			score: 10,
 			streak: 1,
+			caught: 1,
 		});
 	});
 
 	it("takes a life and the streak on a crash, and remembers when", () => {
 		const run = advance({
 			...tick,
-			run: { ...streaking, score: { next: 1, score: 50, streak: 4 } },
+			run: { ...streaking, score: { next: 1, score: 50, streak: 4, caught: 4 } },
 			now: 2,
 		});
 		expect([run.health.lives, run.score.streak, run.crashed]).toEqual([2, 0, 2]);

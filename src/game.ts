@@ -1,7 +1,7 @@
 import type { Playback } from "@/modules/audio";
 import { analyzeOffThread, decode, play, RATE, samples } from "@/modules/audio";
 import type { Lane, Run, Song } from "@/modules/ride";
-import { advance, aim, fit, FRESH, loadFonts, prepare, show } from "@/modules/ride";
+import { accuracy, advance, aim, fit, FRESH, loadFonts, prepare, show } from "@/modules/ride";
 
 import { controls } from "./controls";
 import { $, onFile } from "./dom";
@@ -20,12 +20,13 @@ let ride: Ride | undefined;
 const pick = { label: "Pick a song", run: () => input.click() };
 const again = { label: "Ride again", run: () => ride && start(ride.song) };
 
-function end({ run }: Ride) {
+function end({ run, song }: Ride) {
 	pauseButton.hidden = true;
 	menu({
 		title: run.health.lives === 0 ? "GAME OVER" : "CLEAR",
 		note: `SCORE ${String(run.score.score).padStart(5, "0")}`,
 		actions: [again, pick],
+		accuracy: accuracy({ ...run, ...song }),
 	});
 }
 
@@ -38,13 +39,7 @@ function frame() {
 	const steered = bot
 		? { ...ride.run, lane: aim({ run: ride.run, pickups, blocks, now }) }
 		: ride.run;
-	const run = advance({
-		run: steered,
-		pickups,
-		blocks,
-		now,
-		duration,
-	});
+	const run = advance({ run: steered, pickups, blocks, now, duration });
 	ride = { ...ride, run };
 	show({ pen: fit(canvas), song, run, now });
 	if (!run.ended) return requestAnimationFrame(frame);
