@@ -23,10 +23,9 @@ const again = { label: "Ride again", run: () => ride && start(ride.song) };
 function end({ run, song }: Ride) {
 	pauseButton.hidden = true;
 	menu({
-		title: run.health.lives === 0 ? "GAME OVER" : "SURFED",
-		note: `SCORE ${String(run.score.score).padStart(5, "0")}`,
+		title: run.health.lives === 0 ? "GAME OVER" : "FINISHED",
 		actions: [again, pick],
-		accuracy: accuracy({ ...run, ...song }),
+		result: { score: run.score.score, accuracy: accuracy({ ...run, ...song }) },
 	});
 }
 

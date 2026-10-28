@@ -8,7 +8,7 @@ export const GUIDE = "#2a2a2a";
 export const BACKDROP = "#000";
 
 // Canvas text doesn't request web fonts; without this the first frames fall back.
-const FONTS = ["900 100px Archivo", "400 15px 'JetBrains Mono'", "700 15px 'JetBrains Mono'"];
+const FONTS = ["800 100px 'Azeret Mono'", "400 15px 'Azeret Mono'", "700 15px 'Azeret Mono'"];
 
 export const loadFonts = () => Promise.all(FONTS.map((font) => document.fonts.load(font)));
 

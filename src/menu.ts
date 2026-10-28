@@ -3,14 +3,14 @@ import { rank, RANKS } from "@/modules/ride";
 import { $ } from "./dom";
 
 export type Action = { label: string; run: () => void };
-// `keys` shows the controls line; only the start screen needs it. `accuracy` (0–1) shows on the
-// rank meter; only the end of a ride has one.
+// `keys` shows the controls line; only the start screen needs it. `result` fills the stats and
+// the rank meter; only the end of a ride has one.
 type Screen = {
 	title: string;
 	note?: string;
 	actions?: Action[];
 	keys?: boolean;
-	accuracy?: number;
+	result?: { score: number; accuracy: number };
 };
 
 const panel = $<HTMLElement>("#menu");
@@ -21,6 +21,7 @@ const keys = $<HTMLElement>("#menu .keys");
 const meter = $<HTMLElement>("#menu-rank");
 const scale = $<HTMLElement>("#menu-rank .scale");
 const reading = $("#menu-rank .reading");
+const points = $("#menu-rank .score");
 // Matches the CSS: pixels per percent on the ruler, and how long it slides.
 const PERCENT = 10;
 const SLIDE = 1600;
@@ -56,7 +57,7 @@ function measure(accuracy?: number) {
 	if (accuracy === undefined) return;
 	const percent = Math.floor(100 * accuracy);
 	const reached = rank(accuracy);
-	reading.textContent = `${RANKS[reached]?.name ?? ""} · ${percent}%`;
+	reading.textContent = `${percent}%`;
 	// Applies the reset before the slide, so it starts from 0 every time.
 	void scale.offsetWidth;
 	scale.style.transition = "";
@@ -75,7 +76,8 @@ export function menu(screen: Screen) {
 	keys.hidden = !screen.keys;
 	// Shown first: a hidden ruler wouldn't animate its slide.
 	panel.hidden = false;
-	measure(screen.accuracy);
+	points.textContent = String(screen.result?.score ?? 0).padStart(5, "0");
+	measure(screen.result?.accuracy);
 	actions.querySelector("button")?.focus();
 }
 
