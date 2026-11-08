@@ -40,9 +40,10 @@ function frame() {
 		: ride.run;
 	const run = advance({ run: steered, pickups, blocks, now, duration });
 	ride = { ...ride, run };
+	if (run.health.lives === 0) playback.muffle();
 	show({ pen: fit(canvas), song, run, now });
 	if (!run.ended) return requestAnimationFrame(frame);
-	playback.stop();
+	if (run.health.lives > 0) playback.stop();
 	end(ride);
 }
 
