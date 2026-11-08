@@ -1,4 +1,4 @@
-export type Playback = { position: () => number; stop: () => void };
+export type Playback = { position: () => number; muffle: () => void; stop: () => void };
 
 export function play({
 	context,
@@ -8,8 +8,20 @@ export function play({
 	buffer: AudioBuffer;
 }): Playback {
 	const source = new AudioBufferSourceNode(context, { buffer });
-	source.connect(context.destination);
+	const filter = new BiquadFilterNode(context, {
+		type: "lowpass",
+		frequency: context.sampleRate / 2,
+	});
+	source.connect(filter).connect(context.destination);
 	source.start();
 	const start = context.currentTime;
-	return { position: () => context.currentTime - start, stop: () => source.stop() };
+
+	function muffle() {
+		const now = context.currentTime;
+		filter.frequency.cancelScheduledValues(now);
+		filter.frequency.setValueAtTime(filter.frequency.value, now);
+		filter.frequency.linearRampToValueAtTime(550, now + 0.5);
+	}
+
+	return { position: () => context.currentTime - start, muffle, stop: () => source.stop() };
 }
