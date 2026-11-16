@@ -4,6 +4,7 @@ import type { Ridge } from "./utils/grid";
 import { grid } from "./utils/grid";
 import { hits } from "./utils/hits";
 import type { Hit } from "./utils/judge";
+import { road } from "./utils/road";
 import { rides, speeds } from "./utils/speed";
 import { track } from "./utils/track";
 
@@ -12,6 +13,7 @@ export type Song = {
 	ridges: Float32Array;
 	kicks: Float32Array;
 	track: Float32Array;
+	road: Float32Array;
 	grid: Ridge[];
 	pickups: Hit[];
 	blocks: Hit[];
@@ -37,6 +39,7 @@ export function prepare({ analysis, buffer, name }: Source): Song {
 		ridges,
 		kicks,
 		track: path,
+		road: road({ intensity, track: path }),
 		grid: grid({ beats, track: path }),
 		...hits(speed),
 		title: title(name),

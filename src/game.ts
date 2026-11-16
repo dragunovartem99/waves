@@ -2,6 +2,7 @@ import type { Playback } from "@/modules/audio";
 import { analyzeOffThread, decode, play, RATE, samples } from "@/modules/audio";
 import type { Lane, Run, Song } from "@/modules/ride";
 import { accuracy, advance, aim, fit, FRESH, loadFonts, prepare, show } from "@/modules/ride";
+import { World } from "@/modules/ride/draw/scene";
 
 import { controls } from "./controls";
 import { $, onFile } from "./dom";
@@ -11,6 +12,7 @@ type Ride = { song: Song; playback: Playback; run: Run; paused: boolean };
 
 const context = new AudioContext({ sampleRate: RATE });
 const canvas = $<HTMLCanvasElement>("#ride");
+const world = new World($<HTMLCanvasElement>("#world"));
 const input = $<HTMLInputElement>("#file");
 const pauseButton = $<HTMLButtonElement>("#pause");
 // `?bot` rides for you: every pickup, no blocks. For recording demos.
@@ -41,7 +43,7 @@ function frame() {
 	const run = advance({ run: steered, pickups, blocks, now, duration });
 	ride = { ...ride, run };
 	if (run.health.lives === 0) playback.muffle();
-	show({ pen: fit(canvas), song, run, now });
+	show({ pen: fit(canvas), world, song, run, now });
 	if (!run.ended) return requestAnimationFrame(frame);
 	if (run.health.lives > 0) playback.stop();
 	end(ride);

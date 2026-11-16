@@ -1,84 +1,97 @@
-import { HOP, POINTS, RATE } from "@/modules/audio";
+import {
+	ACESFilmicToneMapping,
+	Color,
+	DirectionalLight,
+	Fog,
+	HemisphereLight,
+	PerspectiveCamera,
+	Scene,
+	SRGBColorSpace,
+	WebGLRenderer,
+} from "three";
+import type { Group } from "three";
 
-import type { Ridge } from "../utils/grid";
-import type { Hit } from "../utils/judge";
+import { HOP, RATE } from "@/modules/audio";
+
+import type { Song } from "../song";
+import type { Run } from "../utils/advance";
 import { distance } from "../utils/track";
-import type { Pen } from "./canvas";
-import { BACKDROP } from "./canvas";
-import { clamp, guides, hit, player, ridge } from "./lines";
+import { follow } from "./camera";
+import { car } from "./car";
+import { course, dispose } from "./course";
+import { LANE } from "./road";
+import type { Traffic } from "./traffic";
 
-// `at` is the playhead in fractional frames; `pickups` and `blocks` are the ones not judged yet.
-export type Scene = {
-	pen: Pen;
-	ridges: Float32Array;
-	track: Float32Array;
-	grid: Ridge[];
-	pickups: Hit[];
-	blocks: Hit[];
-	at: number;
-	u: number;
-	kick: number;
-	phase: number;
-};
-type Item = { depth: number; frame: number; beat?: boolean; lane?: Hit["lane"]; block?: boolean };
+type Frame = { song: Song; run: Run; now: number };
+const VIEW = 150;
 
-// Track distance from the front ridge to the horizon.
-const SPAN = 126;
-// Ridges fade in over the far seventh, so new ones don't pop in at the horizon.
-const FADE = 1 / 7;
-const fade = (depth: number) => clamp((1 - depth) / FADE);
+export class World {
+	private renderer: WebGLRenderer;
+	private scene = new Scene();
+	private camera = new PerspectiveCamera(58, 1, 0.1, VIEW + 40);
+	private course?: Group;
+	private player = car();
+	private traffic: Traffic[] = [];
+	private song?: Song;
+	private width = 0;
+	private height = 0;
 
-function slice({ ridges, frame }: { ridges: Float32Array; frame: number }) {
-	const f = Math.round(frame);
-	return f < 0 ? new Float32Array(0) : ridges.subarray(f * POINTS, (f + 1) * POINTS);
-}
+	constructor(canvas: HTMLCanvasElement) {
+		this.renderer = new WebGLRenderer({ canvas, antialias: true });
+		this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+		this.renderer.outputColorSpace = SRGBColorSpace;
+		this.renderer.toneMapping = ACESFilmicToneMapping;
+		this.renderer.toneMappingExposure = 0.95;
+		this.scene.background = new Color(0x000000);
+		this.scene.fog = new Fog(0x000000, 48, VIEW);
+		this.scene.add(new HemisphereLight(0xd8d8d2, 0x000000, 1.5));
+		const light = new DirectionalLight(0xffffff, 2.5);
+		light.position.set(-6, 12, 8);
+		light.target.position.set(0, 0, -12);
+		this.camera.position.set(0, 5.8, 12.5);
+		this.camera.lookAt(0, 0.5, -22);
+		this.scene.add(light, light.target, this.player);
+	}
 
-const visible = (items: Item[]) =>
-	items.filter(({ depth }) => depth > 0 && depth <= 1).toSorted((a, b) => b.depth - a.depth);
+	private resize() {
+		const { clientWidth: width, clientHeight: height } = this.renderer.domElement;
+		if (width === this.width && height === this.height) return;
+		this.width = width;
+		this.height = height;
+		this.renderer.setSize(width, height, false);
+		this.camera.aspect = width / Math.max(1, height);
+		this.camera.updateProjectionMatrix();
+	}
 
-// Ridges sit on the beat grid, so each one reaches the player in time with the music.
-function lines({ track, grid, at }: Scene): Item[] {
-	const now = distance({ track, frame: at });
-	return visible(
-		grid.map(({ frame, beat, distance: far }) => ({ frame, beat, depth: (far - now) / SPAN }))
-	);
-}
-
-function marks({ track, pickups, blocks, at }: Scene): Item[] {
-	const now = distance({ track, frame: at });
-	const mark = ({ hit: { time, lane }, block }: { hit: Hit; block: boolean }) => {
-		const frame = (time * RATE) / HOP;
-		return { frame, lane, block, depth: (distance({ track, frame }) - now) / SPAN };
-	};
-	return visible([
-		...pickups.map((entry) => mark({ hit: entry, block: false })),
-		...blocks.map((entry) => mark({ hit: entry, block: true })),
-	]);
-}
-
-function paint({ view, item }: { view: Scene; item: Item }) {
-	const { pen, ridges, kick, phase } = view;
-	const { depth, frame, beat = true, lane, block = false } = item;
-	const line = { pen, depth, values: slice({ ridges, frame }), kick, phase, beat };
-	if (line.values.length < POINTS) return;
-	pen.context.globalAlpha = fade(depth);
-	if (lane === undefined) ridge(line);
-	else hit({ line, lane, block });
-}
-
-// Ridges are painted far → near for occlusion, ending with the live front ridge (the spectrum
-// right now) that the player rides on. Hits go over all of them: a nearer ridge must never hide one.
-export function scene(view: Scene) {
-	const { pen, ridges, at, u, kick, phase } = view;
-	pen.context.globalAlpha = 1;
-	pen.context.fillStyle = BACKDROP;
-	pen.context.fillRect(0, 0, pen.width, pen.height);
-	guides(pen);
-	lines(view).forEach((item) => paint({ view, item }));
-	pen.context.globalAlpha = 1;
-	const front = { pen, depth: 0, values: slice({ ridges, frame: at }), kick, phase };
-	if (front.values.length >= POINTS) ridge(front);
-	marks(view).forEach((item) => paint({ view, item }));
-	pen.context.globalAlpha = 1;
-	if (front.values.length >= POINTS) player({ line: front, u });
+	show({ song, run, now }: Frame) {
+		if (song !== this.song) {
+			if (this.course) dispose(this.course);
+			const next = course(song);
+			this.song = song;
+			this.course = next.group;
+			this.traffic = next.items;
+			this.scene.add(next.group);
+		}
+		this.resize();
+		const frame = (now * RATE) / HOP;
+		this.player.position.set((run.u - 0.5) * LANE * 5, 0.04, 0);
+		if (this.course) follow(this.camera, this.course, song, frame);
+		const travelled = distance({ track: song.track, frame });
+		this.traffic.forEach((item) => {
+			const ahead = item.distance - travelled;
+			const caught =
+				item.kind === "pickup" &&
+				item.index < run.score.next &&
+				item.hit.lane === run.lane &&
+				Math.abs(item.hit.time - now) <= 0.08;
+			const crashed =
+				item.kind === "block" &&
+				item.index < run.health.next &&
+				item.hit.lane === run.lane &&
+				run.crashed === now;
+			if (caught || crashed) item.gone = true;
+			item.object.visible = !item.gone && ahead > -5 && ahead < VIEW;
+		});
+		this.renderer.render(this.scene, this.camera);
+	}
 }
