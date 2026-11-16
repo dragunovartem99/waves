@@ -8,6 +8,8 @@ Play at [dragunovartem99.github.io/waves](https://dragunovartem99.github.io/wave
 
 Add `?bot` and an autopilot rides for you, catching every pickup, for recording demos.
 
+[AudioSurf lineage and track generation](docs/audiosurf.md) documents the current analysis pipeline, what was ported from AudioSurf, and where Waves deliberately diverges.
+
 ## Development
 
 Requires Node 24+.
