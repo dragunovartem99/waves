@@ -11,6 +11,7 @@ export function play({
 	const filter = new BiquadFilterNode(context, {
 		type: "lowpass",
 		frequency: context.sampleRate / 2,
+		Q: 0.5,
 	});
 	source.connect(filter).connect(context.destination);
 	source.start();
@@ -20,7 +21,7 @@ export function play({
 		const now = context.currentTime;
 		filter.frequency.cancelScheduledValues(now);
 		filter.frequency.setValueAtTime(filter.frequency.value, now);
-		filter.frequency.linearRampToValueAtTime(550, now + 0.5);
+		filter.frequency.exponentialRampToValueAtTime(550, now + 1.2);
 	}
 
 	return { position: () => context.currentTime - start, muffle, stop: () => source.stop() };
