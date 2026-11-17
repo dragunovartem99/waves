@@ -1,29 +1,35 @@
 import type { Run } from "./advance";
 import type { Hit } from "./judge";
 import type { Lane } from "./project";
+import type { Route } from "./route";
 
-type Sight = { run: Run; pickups: Hit[]; blocks: Hit[]; now: number };
+type Sight = {
+	run: Run;
+	pickups: Hit[];
+	blocks: Hit[];
+	route: Route;
+	now: number;
+};
 
-// Seconds ahead a lane must be clear of unsettled blocks: they hit the instant they arrive,
-// so this has to outlast the gap to the next frame.
-const AHEAD = 0.1;
-// Seconds before a pickup when the bot moves to its lane.
-const SOON = 0.3;
-// Lanes to sidestep into, nearest first.
-const NEAR: Record<Lane, Lane[]> = { 0: [1, 2], 1: [0, 2], 2: [1, 0] };
+const BASE = 0.55;
+const PER_LANE = 0.25;
+const REST = 0.2;
+const MIN_LEAD = 0.15;
 
-// From the middle either side will do; the block's arrival picks one, so dodges vary
-// without making this impure.
-const sides = (lane: Lane, block?: Hit) =>
-	lane === 1 && Math.round((block?.time ?? 0) * 1000) % 2 ? NEAR[1].toReversed() : NEAR[lane];
-
-// Autopilot: holds its lane until the next pickup is SOON, then moves to it, unless a block is
-// about to arrive there; then holds or sidesteps to the nearest clear lane.
-export function aim({ run, pickups, blocks, now }: Sight): Lane {
+// Follow the route calculated for the whole song. After a hit, settle briefly before turning; on
+// tightly spaced hits, MIN_LEAD overrides that rest so the next maneuver still starts in time.
+export function aim({ run, pickups, blocks, route, now }: Sight): Lane {
 	const pickup = pickups[run.score.next];
-	const goal = pickup && pickup.time - now <= SOON ? pickup.lane : run.lane;
-	const coming = blocks.slice(run.health.next).filter(({ time }) => time <= now + AHEAD);
-	const clear = (lane: Lane) => !coming.some((block) => block.lane === lane);
-	const order = [goal, run.lane, ...sides(run.lane, coming[0])];
-	return order.find((lane) => clear(lane)) ?? run.lane;
+	const block = blocks[run.health.next];
+	const toPickup = !!pickup && (!block || pickup.time <= block.time);
+	const next = toPickup ? pickup : block;
+	const goal = toPickup ? route.pickups[run.score.next] : route.blocks[run.health.next];
+	if (!next || goal === undefined) return run.lane;
+	const lead = BASE + Math.abs(goal - run.lane) * PER_LANE;
+	const settled = Math.max(
+		pickups[run.score.next - 1]?.time ?? -Infinity,
+		blocks[run.health.next - 1]?.time ?? -Infinity
+	);
+	const ready = Math.min(settled + REST, next.time - MIN_LEAD);
+	return now >= Math.max(next.time - lead, ready) ? goal : run.lane;
 }

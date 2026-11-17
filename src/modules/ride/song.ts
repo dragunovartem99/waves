@@ -5,6 +5,8 @@ import { grid } from "./utils/grid";
 import { hits } from "./utils/hits";
 import type { Hit } from "./utils/judge";
 import { road } from "./utils/road";
+import type { Route } from "./utils/route";
+import { route } from "./utils/route";
 import { speeds } from "./utils/speed";
 import { track } from "./utils/track";
 
@@ -17,6 +19,7 @@ export type Song = {
 	grid: Ridge[];
 	pickups: Hit[];
 	blocks: Hit[];
+	route: Route;
 	title: string;
 };
 type Source = { analysis: Analysis; buffer: AudioBuffer; name: string };
@@ -33,6 +36,7 @@ export function prepare({ analysis, buffer, name }: Source): Song {
 	const { ridges, kicks, beats, intensity } = analysis;
 	const speed = speeds(intensity);
 	const path = track({ speeds: speed, kicks });
+	const hitList = hits(speed);
 	return {
 		buffer,
 		ridges,
@@ -40,7 +44,8 @@ export function prepare({ analysis, buffer, name }: Source): Song {
 		track: path,
 		road: road({ intensity, track: path }),
 		grid: grid({ beats, track: path }),
-		...hits(speed),
+		...hitList,
+		route: route(hitList),
 		title: title(name),
 	};
 }

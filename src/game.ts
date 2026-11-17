@@ -36,9 +36,9 @@ function frame() {
 	const { song, playback } = ride;
 	const { duration } = song.buffer;
 	const now = Math.min(playback.position(), duration);
-	const { pickups, blocks } = song;
+	const { pickups, blocks, route } = song;
 	const steered = bot
-		? { ...ride.run, lane: aim({ run: ride.run, pickups, blocks, now }) }
+		? { ...ride.run, lane: aim({ run: ride.run, pickups, blocks, route, now }) }
 		: ride.run;
 	const run = advance({ run: steered, pickups, blocks, now, duration });
 	ride = { ...ride, run };
@@ -62,6 +62,7 @@ function start(song: Song) {
 // Suspending the audio context freezes `currentTime`, so the music and the ride stop together.
 function pause() {
 	if (!ride || ride.paused || ride.run.ended) return;
+	ride.playback.slow(false);
 	ride = { ...ride, paused: true };
 	void context.suspend();
 	pauseButton.ariaPressed = "true";
@@ -94,13 +95,16 @@ function steer(move: Record<Lane, Lane>) {
 		ride = { ...ride, run: { ...ride.run, lane: move[ride.run.lane] } };
 }
 
+const slow = (down: boolean) =>
+	ride?.paused === false && !ride.run.ended && ride.playback.slow(down);
+
 const open = (file: File) =>
 	load(file).catch((error: unknown) =>
 		menu({ title: "CAN'T READ IT", note: String(error), actions: [pick] })
 	);
 
 const toggle = () => (ride?.paused ? unpause() : isOpen() || pause());
-controls({ canvas, pauseButton, steer, toggle, pause });
+controls({ canvas, pauseButton, steer, toggle, pause, slow });
 onFile((file) => void open(file));
 
 await loadFonts();
