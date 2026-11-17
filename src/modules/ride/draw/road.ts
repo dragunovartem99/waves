@@ -65,7 +65,7 @@ function beats(song: Song) {
 export function road(song: Song) {
 	const group = new Group();
 	const material = new MeshStandardMaterial({
-		color: 0x17181b,
+		color: 0x121316,
 		roughness: 0.92,
 		metalness: 0,
 		side: DoubleSide,
