@@ -26,13 +26,13 @@ Audio file
        -> 96-point log-frequency ridge lines  [Waves renderer]
 
 prepare()
-  -> speeds(intensity)     AudioSurf-compatible normalization for traffic
-  -> rings -> eased virtual tilts -> maxima significance -> one hit per swell
-  -> deterministic lane, pickup/block quantile, chains, and block thinning
+  -> speeds(intensity)     song-relative normalization for traffic and visible motion
+  -> rings -> eased tilts -> maxima significance -> one hit per swell
+  -> deterministic lane, pickup/block quantile, chains, block thinning, and intro grace
 
-  -> rides(intensity)      Waves-specific normalization for visible motion
   -> cumulative track distance + kick surges
-  -> beat and quarter-beat visual ridges placed on that distance field
+  -> visible XYZ road from smoothed tilts and distance-based curves
+  -> beat markers placed on that road
 ```
 
 Relevant entry points:
@@ -42,8 +42,9 @@ Relevant entry points:
 - [`src/modules/ride/utils/hits.ts`](../src/modules/ride/utils/hits.ts): traffic generation.
 - [`src/modules/ride/utils/track.ts`](../src/modules/ride/utils/track.ts): visible distance and time
   conversion.
-- [`src/modules/ride/draw/scene.ts`](../src/modules/ride/draw/scene.ts): independent placement of
-  beat ridges and traffic in the rendered scene.
+- [`src/modules/ride/utils/road.ts`](../src/modules/ride/utils/road.ts): the visible 3D centerline.
+- [`src/modules/ride/draw/scene.ts`](../src/modules/ride/draw/scene.ts): Three.js scene, camera,
+  player, and traffic placement.
 
 ## What was taken from AudioSurf
 
@@ -81,7 +82,7 @@ in `Analysis`.
 
 ### 2. Song-relative speed normalization
 
-For traffic generation, Waves keeps AudioSurf's baseline formula:
+For both traffic generation and visible motion, Waves keeps AudioSurf's baseline formula:
 
 ```text
 baseline = min(song peak intensity, 2 * song mean intensity)
@@ -93,8 +94,8 @@ Implementation: `speeds()` in [`speed.ts`](../src/modules/ride/utils/speed.ts).
 This makes speed relative to each song rather than to an absolute mastering level. Silence still
 moves at 10% speed, and sufficiently intense passages reach full speed.
 
-The visible ride intentionally uses a **different** normalization; see
-[Two speed curves](#two-speed-curves-traffic-versus-visible-motion) below.
+The same normalized curve drives traffic, visible movement, and road relief; see
+[Shared speed curve](#shared-speed-curve-traffic-and-visible-motion) below.
 
 ### 3. Distance-based rings
 
@@ -114,7 +115,7 @@ This is only a logical sampling grid. Waves does not reproduce AudioSurf's three
 spacing, vehicle-speed setting, positions, rotations, or road mesh. One frame can emit multiple
 rings.
 
-### 4. Eased virtual tilt
+### 4. Eased road tilt
 
 The normalized ring speed is mapped through AudioSurf's exact tilt keys:
 
@@ -132,10 +133,11 @@ tilt  = clamp(tilt, -0.7, 0.7)
 
 Implementation: [`tilt.ts`](../src/modules/ride/utils/tilt.ts).
 
-Calm music therefore produces positive virtual tilt and intense music negative virtual tilt. The
-important adaptation is that **Waves never renders this tilt**. It is an analysis signal used to
-find musical swells, not road geometry. AudioSurf's separate `pitch = -tilt` rendering convention
-is irrelevant to the Waves renderer.
+Calm music therefore produces positive tilt and intense music negative tilt. These values still
+feed swell detection, but Waves now also renders them as road relief. `road()` applies six
+additional smoothing passes, then integrates the slopes into the centerline's Y coordinate with a
+relief factor of 1.3. This is Waves-specific geometry rather than a reproduction of AudioSurf's
+separate `pitch = -tilt` rendering convention.
 
 ### 5. Maxima significance and one hit per swell
 
@@ -153,7 +155,9 @@ Implementations: [`maxima.ts`](../src/modules/ride/utils/maxima.ts) and
 Because tilt falls as intensity rises, this finds rings embedded in sustained musical build-ups.
 A hit represents a **broad intensity swell**, not necessarily an onset, beat, or note.
 
-Unlike AudioSurf, which starts walking candidates at ring 11, Waves currently searches from ring 0. There is no AudioSurf-style initial-ring warm-up or opening grace period in this generator.
+Unlike AudioSurf, which starts walking candidates at ring 11, Waves searches from ring 0. After
+chaining and thinning, it discards hits during the first second, creating an opening grace period
+without changing swell detection.
 
 ### 6. Casual Mono color split, chains, and thinning
 
@@ -168,8 +172,8 @@ Waves uses AudioSurf's casual Mono proportions as a binary game rule:
 Implementation: [`hits.ts`](../src/modules/ride/utils/hits.ts).
 
 The 55% split corresponds to AudioSurf casual Mono turning the weakest 30% plus the next 25% grey.
-The final Waves block share need not be exactly 55%, because chaining can change kinds and
-thinning subsequently removes blocks.
+The final Waves block share need not be exactly 55%, because chaining can change kinds, thinning
+removes blocks, and the opening filter removes early hits.
 
 AudioSurf's five-color strength distribution was:
 
@@ -191,67 +195,57 @@ Implementation: [`random.ts`](../src/modules/ride/utils/random.ts). Waves always
 AudioSurf's lane count could vary by mode. Traffic layouts are therefore deterministic but are not
 expected to match AudioSurf's layouts.
 
-## Two speed curves: traffic versus visible motion
+## Shared speed curve: traffic and visible motion
 
-This distinction is essential for future changes.
+This coupling is essential for future changes. `speeds(intensity)` is the AudioSurf-compatible,
+twice-the-mean normalization described above. It drives both ring placement and accumulation of
+visible track distance, and therefore determines:
 
-### `speeds(intensity)`: traffic speed
-
-This is the AudioSurf-compatible, twice-the-mean normalization described above. It drives ring
-placement and therefore determines:
-
-- virtual tilt and detected swells;
+- tilt, detected swells, and visible road hills;
 - the number and spacing of hits;
-- hit timestamps;
-- chain and thinning distances, which are measured in rings.
+- hit timestamps and the speed at which the road and traffic approach;
+- chain and thinning distances, which are measured in rings;
+- beat-marker placement in track distance.
 
-Changing this function changes the playable traffic, not just the presentation.
-
-### `rides(intensity)`: visible ride speed
-
-Waves deliberately uses another baseline for movement:
-
-- Sort the song's intensity values.
-- Take the 80th-percentile intensity as the baseline.
-- Use the same 0.1–1 clamp around `intensity / baseline`.
-
-As a result, approximately the loudest 20% of frames can move at full speed. This was added
-because a dense wall of sound could otherwise remain below AudioSurf's twice-the-mean baseline and
-never feel fast.
+Changing this function changes gameplay and presentation together. The earlier separate
+80th-percentile `rides()` normalization was removed.
 
 The visible path also adds a Waves-specific kick surge:
 
 ```text
-distance per frame = PACE * (rideSpeed + 0.5 * kick)
+distance per frame = PACE * (speed + 0.5 * kick)
 PACE = 3
 ```
 
 See [`speed.ts`](../src/modules/ride/utils/speed.ts) and
-[`track.ts`](../src/modules/ride/utils/track.ts). Kick surges move the view and beat ridges; they do
-**not** retime hits, whose timestamps were already fixed by the traffic ring frames.
-
-Do not casually merge `speeds()` and `rides()`. Their different behavior is intentional.
+[`track.ts`](../src/modules/ride/utils/track.ts). Kick surges move the view, road, and traffic; they
+do **not** retime hits, whose timestamps were already fixed by the traffic ring frames.
 
 ## What was added or changed for Waves
 
-### Beat-based visual ridges instead of a 3D highway
+### A 3D road with beat markers
 
-AudioSurf's rings become a visible 3D road. Waves instead renders spectral ridge lines on a Canvas
-2D field:
+Waves renders its own Three.js/WebGL road rather than reproducing AudioSurf's highway mesh:
 
-- tempo is estimated from spectral-flux autocorrelation over 60–200 BPM, with a prior around 120
-  BPM;
-- dynamic programming tracks beats while tolerating small timing deviations and gaps;
-- one visual ridge is placed on each tracked beat, with quarter-beat ridges where distance permits;
-- the renderer interpolates cumulative track distance to make ridges glide toward the player.
+- Z follows cumulative track distance, preserving the relationship between movement and hit time;
+- Y integrates the smoothed tilt curve into climbs and dives;
+- X follows deterministic distance-based heading curves;
+- the per-frame XYZ centerline becomes a three-lane mesh with edge and lane stripes.
+
+Tempo is estimated from spectral-flux autocorrelation over 60–200 BPM, with a prior around 120 BPM.
+Dynamic programming tracks beats while tolerating small timing deviations and gaps. The grid can
+also compute quarter-beat positions where distance permits, but the current road renderer draws
+transverse markers only on tracked beats.
 
 The beat grid is **not** the traffic ring grid. Hits are not snapped to beats. Beat tracking and
-spectral flux currently serve visualization, while hit placement follows intensity swells.
+spectral flux serve visualization, while hit placement follows intensity swells.
 
 Relevant files: [`flux.ts`](../src/modules/audio/utils/flux.ts),
 [`tempo.ts`](../src/modules/audio/utils/tempo.ts),
-[`beats.ts`](../src/modules/audio/utils/beats.ts), and
-[`grid.ts`](../src/modules/ride/utils/grid.ts).
+[`beats.ts`](../src/modules/audio/utils/beats.ts),
+[`grid.ts`](../src/modules/ride/utils/grid.ts),
+[`road.ts`](../src/modules/ride/utils/road.ts), and
+[`draw/road.ts`](../src/modules/ride/draw/road.ts).
 
 ### Spectrum-as-terrain presentation
 
@@ -259,18 +253,21 @@ Each analysis frame also produces a 96-point, log-spaced ridge covering 40 Hz–
 interpolate between FFT bins; treble points take maxima across bins. The values are log-compressed,
 smoothed, and normalized to the song's peak.
 
-These ridges are a Waves visual system, not part of AudioSurf's algorithm. Kick strength adds
-surges and a field ripple. See [`ridge.ts`](../src/modules/audio/utils/ridge.ts),
+These ridges are a Waves visual system, not part of AudioSurf's algorithm. The 3D renderer averages
+each 24-point third of the spectrum and draws three spectral lines on each side of the road, with
+their height following the music. Kick strength adds a distance surge and influences the camera;
+it no longer drives a Canvas field ripple. See [`ridge.ts`](../src/modules/audio/utils/ridge.ts),
 [`ridges.ts`](../src/modules/audio/utils/ridges.ts),
-[`kicks.ts`](../src/modules/audio/utils/kicks.ts), and
-[`project.ts`](../src/modules/ride/utils/project.ts).
+[`kicks.ts`](../src/modules/audio/utils/kicks.ts),
+[`waves.ts`](../src/modules/ride/draw/waves.ts), and
+[`camera.ts`](../src/modules/ride/draw/camera.ts).
 
 ### Different interaction and scoring
 
-Waves uses three screen lanes, white pickups, red blocks, and a white player dot. A pickup has an
-±80 ms catch window and scores `10 * new streak`; a miss breaks the streak. A block in the current
-lane costs one of three lives immediately on arrival. These rules are not an attempted recreation
-of AudioSurf scoring or vehicle modes.
+Waves uses three road lanes, white torus pickups, red car obstacles, and a dark player car. A
+pickup has an ±80 ms catch window and scores `10 * new streak`; a miss breaks the streak. A block
+in the current lane costs one of three lives immediately on arrival. These rules are not an
+attempted recreation of AudioSurf scoring or vehicle modes.
 
 ## AudioSurf features deliberately not ported
 
@@ -279,10 +276,10 @@ the traffic generator:
 
 | AudioSurf feature                                                   | Status in Waves                                                   |
 | ------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Visible uphill/downhill road geometry                               | Omitted; tilt is only a virtual swell-detection signal            |
-| Pan/yaw curves, direction changes, and straight final 500 rings     | Omitted                                                           |
+| Visible uphill/downhill road geometry                               | Adapted; smoothed tilt drives Waves-specific road relief          |
+| Pan/yaw curves, direction changes, and straight final 500 rings     | Replaced by deterministic distance-based heading curves           |
 | Sidewinder roll                                                     | Omitted                                                           |
-| Physical ring positions, rotations, road colors, and 3-unit spacing | Replaced by scalar distance and Canvas projection                 |
+| Physical ring positions, rotations, road colors, and 3-unit spacing | Replaced by a per-frame XYZ centerline and Three.js road mesh     |
 | Five strength colors                                                | Collapsed to white pickups and red blocks                         |
 | Non-Mono traffic rules and non-Mono easy thinning                   | Omitted                                                           |
 | Pro/Elite 75% grey split and Elite 6-ring thinning                  | Not exposed; one casual-like ruleset is active                    |
@@ -331,11 +328,11 @@ and beat tracking. Likewise, bass-rise detection remains for kicks and visible s
    even if the renderer is untouched.
 5. **Preserve determinism.** Continue using seeded generation rather than ambient randomness if
    repeated rides of the same song should remain identical.
-6. **Do not confuse virtual tilt with visuals.** Adding visible hills would be a new renderer
-   feature; current `tilts()` output is consumed only by `maxima()`.
-7. **Treat beat alignment as a separate design decision.** Currently beats control ridge placement,
+6. **Keep traffic and road relief in sync.** `tilts()` feeds both `maxima()` and, after additional
+   smoothing, visible road geometry. Changing tilt can affect both hit detection and the ride.
+7. **Treat beat alignment as a separate design decision.** Currently beats control road markers,
    not hit timing. Snapping hits to beats would change the ported AudioSurf traffic model.
-8. **Check final traffic, not only the initial quantile.** Chains and thinning can substantially
-   change the final pickup/block ratio and spacing.
+8. **Check final traffic, not only the initial quantile.** Chains, thinning, and the opening filter
+   can substantially change the final pickup/block ratio and spacing.
 9. **Validate with both unit tests and real songs.** The pure helpers have focused tests, but hit
    density, song-to-song speed, and playability also need listening and full-song rides.
