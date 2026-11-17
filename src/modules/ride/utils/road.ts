@@ -36,7 +36,7 @@ export function road({ intensity, track }: Source) {
 			const slope = slopes[ring] ?? 0;
 			const heading = Math.sin(distance / 105) * 0.42 + Math.sin(distance / 43) * 0.08;
 			x += Math.sin(heading) * step;
-			y -= Math.sin(slope) * step * RELIEF;
+			y += Math.sin(slope) * step * RELIEF;
 		}
 		centers.set([x, y, -distance], frame * 3);
 	}
