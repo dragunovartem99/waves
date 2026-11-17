@@ -21,11 +21,13 @@ import { car } from "./car";
 import { course, dispose } from "./course";
 import { align } from "./path";
 import { LANE } from "./road";
+import { indicators } from "./signals";
 import { update } from "./traffic";
 import type { Traffic } from "./traffic";
 
 type Frame = { song: Song; run: Run; now: number };
 const VIEW = 150;
+const WARNING = 1;
 
 export class World {
 	private renderer: WebGLRenderer;
@@ -33,6 +35,7 @@ export class World {
 	private camera = new PerspectiveCamera(58, 1, 0.1, VIEW + 40);
 	private course?: Group;
 	private player = car();
+	private indicate = indicators(this.player);
 	private traffic: Traffic[] = [];
 	private song?: Song;
 	private now = 0;
@@ -79,6 +82,14 @@ export class World {
 		this.resize();
 		const frame = (now * RATE) / HOP;
 		this.player.position.set((run.u - 0.5) * LANE * 5, 0.04, 0);
+		const block = song.blocks.find(
+			(candidate, index) =>
+				index >= run.health.next &&
+				candidate.lane === run.lane &&
+				candidate.time >= now &&
+				candidate.time - now <= WARNING
+		);
+		this.indicate(block?.lane);
 		if (this.course) {
 			follow(this.camera, this.course, song, frame);
 			align(this.player, this.course, song.road, frame);
