@@ -1,4 +1,9 @@
-export type Playback = { position: () => number; muffle: () => void; stop: () => void };
+export type Playback = {
+	position: () => number;
+	slow: (down: boolean) => void;
+	muffle: () => void;
+	stop: () => void;
+};
 
 export function play({
 	context,
@@ -15,7 +20,25 @@ export function play({
 	});
 	source.connect(filter).connect(context.destination);
 	source.start();
-	const start = context.currentTime;
+	let elapsed = 0;
+	let previous = context.currentTime;
+
+	// AudioContext time keeps running at full speed, so integrate the changing playback rate.
+	function position() {
+		const now = context.currentTime;
+		elapsed += (now - previous) * source.playbackRate.value;
+		previous = now;
+		return elapsed;
+	}
+
+	function slow(down: boolean) {
+		position();
+		const now = context.currentTime;
+		const rate = source.playbackRate;
+		rate.cancelScheduledValues(now);
+		rate.setValueAtTime(rate.value, now);
+		rate.linearRampToValueAtTime(down ? 2 ** (-7 / 12) : 1, now + 0.2);
+	}
 
 	function muffle() {
 		const now = context.currentTime;
@@ -24,5 +47,5 @@ export function play({
 		filter.frequency.exponentialRampToValueAtTime(550, now + 1.2);
 	}
 
-	return { position: () => context.currentTime - start, muffle, stop: () => source.stop() };
+	return { position, slow, muffle, stop: () => source.stop() };
 }

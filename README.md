@@ -4,7 +4,7 @@
 
 Drop in a song and ride it: an AudioSurf-like game in the browser. The track is built from the music itself: the 3D road climbs and dives with its intensity, spectral waves flank the lanes, louder passages speed you up, and kicks add a surge. Hits land on significant musical swells, the strongest white to catch, the rest red to dodge. Three red hits and the song fades into a muffled background.
 
-Play at [dragunovartem99.github.io/waves](https://dragunovartem99.github.io/waves). Steer with ← → or by tapping either half of the screen; Space or Esc pauses, as does hiding the tab. The song never leaves your browser.
+Play at [dragunovartem99.github.io/waves](https://dragunovartem99.github.io/waves). Steer with ← → or by tapping either half of the screen; hold Space to slow time, Esc pauses, as does hiding the tab. The song never leaves your browser.
 
 Add `?bot` and an autopilot rides for you, catching every pickup, for recording demos.
 
