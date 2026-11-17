@@ -17,6 +17,7 @@ const LANES = [0, 1, 2] as const;
 // Rings within which a hit joins the chain it follows, and rings a block keeps from the last hit.
 const CHAIN = 5;
 const SPACING = 11;
+const INTRO = 1;
 
 const seconds = (frame: number) => (frame * HOP) / RATE;
 
@@ -58,7 +59,9 @@ const thin = (spots: Spot[]) =>
 export function hits(speeds: Float32Array) {
 	const laid = rings(speeds);
 	const found = swells(maxima(tilts(laid)));
-	const spots = thin(chain(split({ found, seed: speeds.length })));
+	const spots = thin(chain(split({ found, seed: speeds.length }))).filter(
+		({ ring }) => seconds(laid[ring]?.frame ?? 0) >= INTRO
+	);
 	const hit = ({ ring, lane }: Spot): Hit => ({ time: seconds(laid[ring]?.frame ?? 0), lane });
 	return {
 		pickups: spots.filter(({ block }) => !block).map((spot) => hit(spot)),

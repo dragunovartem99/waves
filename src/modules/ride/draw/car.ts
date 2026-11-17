@@ -43,6 +43,8 @@ export function car(color = 0x08090b) {
 	const group = new Group();
 	const paint = new MeshStandardMaterial({
 		color,
+		emissive: color,
+		emissiveIntensity: 0.3,
 		metalness: 0.65,
 		roughness: 0.25,
 		flatShading: true,

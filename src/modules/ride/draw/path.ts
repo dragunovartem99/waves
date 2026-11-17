@@ -28,6 +28,13 @@ export function side(direction: Vector3) {
 	return new Vector3(-direction.z, 0, direction.x).normalize();
 }
 
+// Match an object outside the course to the road's final, camera-adjusted orientation.
+export function align(object: Object3D, course: Object3D, road: Float32Array, frame: number) {
+	object.quaternion
+		.setFromUnitVectors(FORWARD, forward(road, frame))
+		.premultiply(course.quaternion);
+}
+
 export function pose(object: Object3D, road: Float32Array, frame: number, lane = 0, lift = 0) {
 	const direction = forward(road, frame);
 	object.position.copy(at(road, frame)).addScaledVector(side(direction), lane);

@@ -19,7 +19,9 @@ import { distance } from "../utils/track";
 import { follow } from "./camera";
 import { car } from "./car";
 import { course, dispose } from "./course";
+import { align } from "./path";
 import { LANE } from "./road";
+import { update } from "./traffic";
 import type { Traffic } from "./traffic";
 
 type Frame = { song: Song; run: Run; now: number };
@@ -33,6 +35,7 @@ export class World {
 	private player = car();
 	private traffic: Traffic[] = [];
 	private song?: Song;
+	private now = 0;
 	private width = 0;
 	private height = 0;
 
@@ -48,7 +51,7 @@ export class World {
 		const light = new DirectionalLight(0xffffff, 2.5);
 		light.position.set(-6, 12, 8);
 		light.target.position.set(0, 0, -12);
-		this.camera.position.set(0, 5.8, 12.5);
+		this.camera.position.set(0, 5.8, 10.5);
 		this.camera.lookAt(0, 0.5, -22);
 		this.scene.add(light, light.target, this.player);
 	}
@@ -64,7 +67,7 @@ export class World {
 	}
 
 	show({ song, run, now }: Frame) {
-		if (song !== this.song) {
+		if (song !== this.song || now < this.now) {
 			if (this.course) dispose(this.course);
 			const next = course(song);
 			this.song = song;
@@ -72,25 +75,20 @@ export class World {
 			this.traffic = next.items;
 			this.scene.add(next.group);
 		}
+		this.now = now;
 		this.resize();
 		const frame = (now * RATE) / HOP;
 		this.player.position.set((run.u - 0.5) * LANE * 5, 0.04, 0);
-		if (this.course) follow(this.camera, this.course, song, frame);
+		if (this.course) {
+			follow(this.camera, this.course, song, frame);
+			align(this.player, this.course, song.road, frame);
+		}
 		const travelled = distance({ track: song.track, frame });
 		this.traffic.forEach((item) => {
 			const ahead = item.distance - travelled;
-			const caught =
-				item.kind === "pickup" &&
-				item.index < run.score.next &&
-				item.hit.lane === run.lane &&
-				Math.abs(item.hit.time - now) <= 0.08;
-			const crashed =
-				item.kind === "block" &&
-				item.index < run.health.next &&
-				item.hit.lane === run.lane &&
-				run.crashed === now;
-			if (caught || crashed) item.gone = true;
-			item.object.visible = !item.gone && ahead > -5 && ahead < VIEW;
+			update(item, run, now);
+			item.object.visible =
+				!item.gone && (item.collectedAt !== undefined || (ahead > -5 && ahead < VIEW));
 		});
 		this.renderer.render(this.scene, this.camera);
 	}

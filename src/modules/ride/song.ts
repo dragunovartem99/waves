@@ -5,7 +5,7 @@ import { grid } from "./utils/grid";
 import { hits } from "./utils/hits";
 import type { Hit } from "./utils/judge";
 import { road } from "./utils/road";
-import { rides, speeds } from "./utils/speed";
+import { speeds } from "./utils/speed";
 import { track } from "./utils/track";
 
 export type Song = {
@@ -32,8 +32,7 @@ const title = (name: string) =>
 export function prepare({ analysis, buffer, name }: Source): Song {
 	const { ridges, kicks, beats, intensity } = analysis;
 	const speed = speeds(intensity);
-	// Hits keep Audiosurf's speed; the ride reaches full speed in every song's loudest parts.
-	const path = track({ speeds: rides(intensity), kicks });
+	const path = track({ speeds: speed, kicks });
 	return {
 		buffer,
 		ridges,
