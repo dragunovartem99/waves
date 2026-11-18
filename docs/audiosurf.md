@@ -28,7 +28,7 @@ Audio file
 prepare()
   -> speeds(intensity)     song-relative normalization for traffic and visible motion
   -> rings -> eased tilts -> maxima significance -> one hit per swell
-  -> deterministic lane, pickup/block quantile, chains, block thinning, and intro grace
+  -> deterministic lane, pickup/block quantile, absolute-time thinning, and intro grace
 
   -> cumulative track distance + kick surges
   -> visible XYZ road from smoothed tilts and distance-based curves
@@ -156,24 +156,28 @@ Because tilt falls as intensity rises, this finds rings embedded in sustained mu
 A hit represents a **broad intensity swell**, not necessarily an onset, beat, or note.
 
 Unlike AudioSurf, which starts walking candidates at ring 11, Waves searches from ring 0. After
-chaining and thinning, it discards hits during the first second, creating an opening grace period
+thinning, it discards hits during the first second, creating an opening grace period
 without changing swell detection.
 
-### 6. Casual Mono color split, chains, and thinning
+### 6. Casual Mono color split and absolute-time thinning
 
 Waves uses AudioSurf's casual Mono proportions as a binary game rule:
 
 - Rank all generated swells globally by significance.
 - Initially make the weakest 55% red blocks to dodge.
 - Make the remaining 45% white pickups to catch.
-- A hit fewer than 5 rings after its chain head inherits that head's lane and kind.
-- Drop a block fewer than 11 rings after the last retained hit; pickups are always retained.
+- Assign each hit a deterministic lane.
+- Drop any hit less than 0.25 seconds after the last retained hit, whether pickup or block.
+
+AudioSurf's five-ring chains and 11-ring block-only thinning are not retained. Waves measures its
+single thinning gap in seconds instead: a fixed ring gap becomes a shorter reaction window as the
+ride speeds up, while a fixed time gap keeps traffic density bounded on the fastest passages.
 
 Implementation: [`hits.ts`](../src/modules/ride/utils/hits.ts).
 
 The 55% split corresponds to AudioSurf casual Mono turning the weakest 30% plus the next 25% grey.
-The final Waves block share need not be exactly 55%, because chaining can change kinds, thinning
-removes blocks, and the opening filter removes early hits.
+The final Waves block share need not be exactly 55%, because thinning and the opening filter
+remove hits after the initial split.
 
 AudioSurf's five-color strength distribution was:
 
@@ -204,7 +208,7 @@ visible track distance, and therefore determines:
 - tilt, detected swells, and visible road hills;
 - the number and spacing of hits;
 - hit timestamps and the speed at which the road and traffic approach;
-- chain and thinning distances, which are measured in rings;
+- traffic thinning, which is measured in seconds rather than rings;
 - beat-marker placement in track distance.
 
 Changing this function changes gameplay and presentation together. The earlier separate
@@ -291,8 +295,8 @@ the traffic generator:
 | Exact Mersenne Twister layout reproduction                          | Replaced by Mulberry32 with a frame-count seed                    |
 | Highway cache/prebuild pipeline                                     | Unnecessary; analysis is local and performed per loaded song      |
 
-In particular, keeping constants such as `0.04`, `42`, `111`, `5`, and `11` does **not** mean the
-whole AudioSurf highway or mode system exists. Those constants belong specifically to traffic
+In particular, keeping constants such as `0.04`, `42`, and `111` does **not** mean the whole
+AudioSurf highway or mode system exists. Those constants belong specifically to traffic
 generation.
 
 ## Earlier Waves approaches that were replaced
@@ -306,7 +310,8 @@ part of current traffic generation:
 - **Local spectral-flux ranking** (within ±4 seconds) and intensity-dependent blocks-per-second
   targets were replaced by the global 55/45 swell-strength split.
 - **A three-lane fairness rule** that converted an impossible wall into a pickup was removed along
-  with the onset-based generator; AudioSurf-style chaining and block thinning now control traffic.
+  with the onset-based generator; AudioSurf-style swell detection and absolute-time thinning now
+  control traffic.
 - **Rank-normalized loudness/mid/high intensity with bidirectional EMA smoothing** was replaced by
   AudioSurf's direct 12-band square-root spectrum sum.
 
@@ -321,8 +326,9 @@ and beat tracking. Likewise, bass-rise detection remains for kicks and visible s
 2. **Know which timeline you are changing.** Audio frames and hit timestamps are song time; rings
    are traffic distance; `track` is visible distance. They are related but not interchangeable.
 3. **Retune coupled constants together.** Ring rate, tilt easing, the 42-ring significance reach,
-   the 111-ring run cap, and 5/11-ring traffic rules were designed around AudioSurf's ring density.
-   Changing `RINGS` alone changes their effective time spans.
+   and the 111-ring run cap were designed around AudioSurf's ring density. Changing `RINGS` alone
+   changes their effective time spans. The 0.25-second traffic gap is deliberately independent of
+   that density, although changing ring timing can change which hits survive thinning.
 4. **Expect intensity changes to move traffic.** Adding smoothing, compression, normalization, or
    outlier rejection changes virtual tilt and can create or remove swells. This affects gameplay
    even if the renderer is untouched.
@@ -332,7 +338,7 @@ and beat tracking. Likewise, bass-rise detection remains for kicks and visible s
    smoothing, visible road geometry. Changing tilt can affect both hit detection and the ride.
 7. **Treat beat alignment as a separate design decision.** Currently beats control road markers,
    not hit timing. Snapping hits to beats would change the ported AudioSurf traffic model.
-8. **Check final traffic, not only the initial quantile.** Chains, thinning, and the opening filter
-   can substantially change the final pickup/block ratio and spacing.
+8. **Check final traffic, not only the initial quantile.** Thinning and the opening filter can
+   substantially change the final pickup/block ratio and spacing.
 9. **Validate with both unit tests and real songs.** The pure helpers have focused tests, but hit
    density, song-to-song speed, and playability also need listening and full-song rides.
