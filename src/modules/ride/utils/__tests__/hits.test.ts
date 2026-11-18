@@ -32,6 +32,16 @@ describe("hits", () => {
 		expect(hits(song())).toEqual({ pickups, blocks });
 	});
 
+	it("keeps a fixed real-time gap between hits on fast swells", () => {
+		const fast = hits(song({ seconds: 10, period: 0.25 }));
+		const ordered = [...fast.pickups, ...fast.blocks].toSorted((a, b) => a.time - b.time);
+
+		expect(ordered.length).toBeGreaterThan(0);
+		ordered.slice(1).forEach((hit, i) => {
+			expect(hit.time - Number(ordered[i]?.time)).toBeGreaterThanOrEqual(0.25);
+		});
+	});
+
 	it("waits for the music to swell", () => {
 		const late = hits(song({ calm: 20 }));
 		expect([...late.pickups, ...late.blocks].every(({ time }) => time >= 20)).toBe(true);
